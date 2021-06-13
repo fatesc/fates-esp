@@ -217,7 +217,7 @@ if (ISPF and Network and Network.send) then
     end
 end
 
-local Drawing = Drawing or {}
+local Drawing = Drawing or loadstring(game:HttpGet("https://raw.githubusercontent.com/fatesc/Roblox-Drawing-Lib/main/main.lua"))();
 
 local Drawings = {}
 
