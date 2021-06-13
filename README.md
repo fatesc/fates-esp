@@ -8,8 +8,8 @@ A universal esp and aimbot / silent aim
 
 ## Previews
 
-<img src=screen1.jpg height="500px">
-<img src=screen2.png height="500px">
+<img src="screen1.jpg" />
+<img src="screen2.png" />
 
 
 ## To Add
@@ -17,3 +17,4 @@ A universal esp and aimbot / silent aim
 - Skeleton esp
 - UI Toggle
 - Kill script
+- Chams
