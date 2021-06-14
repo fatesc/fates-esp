@@ -3,6 +3,14 @@ local Players = game:GetService("Players");
 local UserInputService = game:GetService("UserInputService");
 local Workspace = game:GetService("Workspace");
 
+local Vector3new = Vector3.new
+local Vector2new = Vector2.new
+local CFramenew = CFrame.new
+local BrickColornew = BrickColor.new
+local Drawingnew = Drawing.new
+local Color3new = Color3.new
+local Color3fromRGB = Color3.fromRGB
+
 local Camera = Workspace.CurrentCamera
 
 local LocalPlayer = Players.LocalPlayer
@@ -46,6 +54,9 @@ end
 
 local ISPF, Network, Client, GetBodyParts, GunTbl, Trajectory
 if (game.PlaceId == 292439477) then
+    if (not game:IsLoaded()) then
+        game.Loaded:Wait();
+    end
     ISPF = true
     for i, v in next, getgc(true) do
         if (type(v) == "table") then
@@ -113,7 +124,7 @@ mt.__namecall = newcclosure(function(self, ...)
         if (Char and Char[AimBone] and Chance) then  
             local Viewable = not next(Camera.GetPartsObscuringTarget(Camera, {Camera.CFrame.Position, Char[AimBone].Position}, {LocalPlayer.Character, Char}));
             if (Viewable or Wallbang) then
-                return Char[AimBone], Char[AimBone].Position + (Vector3.new(math.random(1, 10), math.random(1, 10), math.random(1, 10)) / 10), Vector3.new(0, 1, 0), Char[AimBone].Material
+                return Char[AimBone], Char[AimBone].Position + (Vector3new(math.random(1, 10), math.random(1, 10), math.random(1, 10)) / 10), Vector3new(0, 1, 0), Char[AimBone].Material
             end
         end
     end
@@ -125,7 +136,7 @@ mt.__namecall = newcclosure(function(self, ...)
         if (Char and Char[AimBone] and Chance) then
             local Viewable = not next(Camera.GetPartsObscuringTarget(Camera, {Camera.CFrame.Position, Char[AimBone].Position}, {LocalPlayer.Character, Char}));
             if (Viewable or Wallbang) then
-                return Char[AimBone], Char[AimBone].Position + (Vector3.new(math.random(1, 10), math.random(1, 10), math.random(1, 10)) / 10), Vector3.new(0, 1, 0), Char[AimBone].Material
+                return Char[AimBone], Char[AimBone].Position + (Vector3new(math.random(1, 10), math.random(1, 10), math.random(1, 10)) / 10), Vector3new(0, 1, 0), Char[AimBone].Material
             end
         end
     end
@@ -152,7 +163,7 @@ mt.__index = newcclosure(function(Instance_, Index)
                 end
             elseif (SanitisedIndex:lower() == "hit" and (Viewable or Wallbang)) then
                 if (Viewable or Wallbang) then
-                    return Char[AimBone].CFrame * CFrame.new(math.random(1, 10) / 10, math.random(1, 10) / 10, math.random(1, 10) / 10);
+                    return Char[AimBone].CFrame * CFramenew(math.random(1, 10) / 10, math.random(1, 10) / 10, math.random(1, 10) / 10);
                 end
             elseif (SanitisedIndex:lower() == "x" and (Viewable or Wallbang)) then
                 return ViewportPoint.X + (math.random(1, 10) / 10);
@@ -173,7 +184,7 @@ OldFindPartOnRay = hookfunction(Workspace.FindPartOnRay, newcclosure(function(..
         if (Char and Char[AimBone] and Chance) then
             local Viewable = not next(Camera.GetPartsObscuringTarget(Camera, {Camera.CFrame.Position, Char[AimBone].Position}, {LocalPlayer.Character, Char}));
             if (Viewable or Wallbang) then
-                return Char[AimBone], Char[AimBone].Position + (Vector3.new(math.random(1, 10), math.random(1, 10), math.random(1, 10)) / 10), Vector3.new(0, 1, 0), Char[AimBone].Material
+                return Char[AimBone], Char[AimBone].Position + (Vector3new(math.random(1, 10), math.random(1, 10), math.random(1, 10)) / 10), Vector3new(0, 1, 0), Char[AimBone].Material
             end
         end
     end
@@ -187,7 +198,7 @@ OldFindPartOnRayWithIgnoreList = hookfunction(Workspace.FindPartOnRayWithIgnoreL
         if (Char and Char[AimBone] and Chance) then
             local Viewable = not next(Camera.GetPartsObscuringTarget(Camera, {Camera.CFrame.Position, Char[AimBone].Position}, {LocalPlayer.Character, Char}));
             if (Viewable or Wallbang) then
-                return Char[AimBone], Char[AimBone].Position + (Vector3.new(math.random(1, 10), math.random(1, 10), math.random(1, 10)) / 10), Vector3.new(0, 1, 0), Char[AimBone].Material
+                return Char[AimBone], Char[AimBone].Position + (Vector3new(math.random(1, 10), math.random(1, 10), math.random(1, 10)) / 10), Vector3new(0, 1, 0), Char[AimBone].Material
             end
         end
     end
@@ -204,9 +215,10 @@ if (ISPF and Network and Network.send) then
                 Char = GetCharacter(SilentAimingPlayer);
             end
             local Chance = math.random(1, 100) < SilentAimHitChance
-            if (Char and Char[AimBone] and Chance) then
-                local AimPos = Char[AimBone].Position + (Vector3.new(math.random(1, 10), math.random(1, 10), math.random(1, 10)) / 10);
-                Args[3].bullets[1][1] = Trajectory(Client.basecframe * Vector3.new(0, 0, 1), Vector3.new(0, -Workspace.Gravity, 0), AimPos, GunTbl.currentgun.data.bulletspeed);
+            local Viewable = not next(Camera.GetPartsObscuringTarget(Camera, {Camera.CFrame.Position, Char[AimBone].Position}, {LocalPlayer.Character, Char}));
+            if (Char and Char[AimBone] and Chance and (Viewable or Wallbang)) then
+                local AimPos = Char[AimBone].Position + (Vector3new(math.random(1, 10), math.random(1, 10), math.random(1, 10)) / 10);
+                Args[3].bullets[1][1] = Trajectory(Client.basecframe * Vector3new(0, 0, 1), Vector3new(0, -Workspace.Gravity, 0), AimPos, GunTbl.currentgun.data.bulletspeed);
       
                 OldSend(Args[1], "newbullets", Args[3], Args[4]);
                 OldSend(Args[1], "bullethit", SilentAimingPlayer, AimPos, GetCharacter(SilentAimingPlayer).Head, Args[3].bullets[1][2]);
@@ -237,8 +249,8 @@ local EspOptions = getgenv().EspOptions or {
     Thickness = 1.5,
     Transparency = .9,
     Size = 16,
-    Color = Color3.fromRGB(20, 226, 207),
-    OutlineColor = Color3.new(),
+    Color = Color3fromRGB(20, 226, 207),
+    OutlineColor = Color3new(),
     Team = "All",
     BoxEsp = true,
     SkeletonEsp = true,
@@ -250,7 +262,7 @@ local AimbotOptions = getgenv().AimbotOptions or {
     FovThickness = 1,
     FovTransparency = 1,
     FovSize = 150,
-    FovColor = Color3.fromRGB(20, 226, 207),
+    FovColor = Color3fromRGB(20, 226, 207),
     Snaplines = false,
     ThirdPerson = false,
     FirstPerson = false,
@@ -304,8 +316,8 @@ local GetMagnitude = function(Plr)
     local Part = Char:FindFirstChild(GetPart(AimBone, Char));
     if (Char and Part) then
         local LPChar = GetCharacter(LocalPlayer);
-        if (LPChar:FindFirstChild("HumanoidRootPart")) then
-            return (Part.Position - (GetCharacter(LocalPlayer) and GetCharacter(LocalPlayer).HumanoidRootPart.Position or Vector3.new())).Magnitude
+        if (LPChar and LPChar:FindFirstChild("HumanoidRootPart")) then
+            return (Part.Position - (GetCharacter(LocalPlayer) and GetCharacter(LocalPlayer).HumanoidRootPart.Position or Vector3new())).Magnitude
         else
             return math.huge
         end
@@ -313,33 +325,33 @@ local GetMagnitude = function(Plr)
 end
 
 local AddDrawing = function(Plr)
-    local Tracer = Drawing.new("Line");
-    local Text = Drawing.new("Text");
-    local Box = Drawing.new("Quad");
+    local Tracer = Drawingnew("Line");
+    local Text = Drawingnew("Text");
+    local Box = Drawingnew("Quad");
     local Skeleton = {
-        Head = Drawing.new("Line"),
-        UpperLeftArm = Drawing.new("Line"),
-        LowerLeftArm = Drawing.new("Line"),
-        UpperRightArm = Drawing.new("Line"),
-        LowerRightArm = Drawing.new("Line"),
-        UpperTorso = Drawing.new("Line"),
-        LowerTorso = Drawing.new("Line"),
-        UpperLeftLeg = Drawing.new("Line"),
-        LowerLeftLeg = Drawing.new("Line"),
-        UpperRightLeg = Drawing.new("Line"),
-        LowerRightLeg = Drawing.new("Line"),
-        LeftHand = Drawing.new("Line"),
-        RightHand = Drawing.new("Line"),
+        Head = Drawingnew("Line"),
+        UpperLeftArm = Drawingnew("Line"),
+        LowerLeftArm = Drawingnew("Line"),
+        UpperRightArm = Drawingnew("Line"),
+        LowerRightArm = Drawingnew("Line"),
+        UpperTorso = Drawingnew("Line"),
+        LowerTorso = Drawingnew("Line"),
+        UpperLeftLeg = Drawingnew("Line"),
+        LowerLeftLeg = Drawingnew("Line"),
+        UpperRightLeg = Drawingnew("Line"),
+        LowerRightLeg = Drawingnew("Line"),
+        LeftHand = Drawingnew("Line"),
+        RightHand = Drawingnew("Line"),
     }
 
     local Tuple = GetVector2(Plr, TracerOptions.To);
     Drawings[Plr] = {}
     if (Tuple) then
-        Tracer.To = Vector2.new(Tuple.X, Tuple.Y);
-        Text.Position = Vector2.new(Tuple.X, Tuple.Y) + Vector2.new(0, -100, 0);
+        Tracer.To = Vector2new(Tuple.X, Tuple.Y);
+        Text.Position = Vector2new(Tuple.X, Tuple.Y) + Vector2new(0, -100, 0);
     end
 
-    Tracer.From = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y);
+    Tracer.From = Vector2new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y);
     Tracer.Color = EspOptions.Color
     Tracer.Thickness = TracerOptions.Thickness
     Tracer.Transparency = TracerOptions.Transparency
@@ -347,7 +359,7 @@ local AddDrawing = function(Plr)
     Drawings[Plr].Tracer = Tracer
 
     local From, ViewportSize = TracerOptions.From, Camera.ViewportSize
-    Tracer.From = From == "Top" and Vector2.new(ViewportSize.X / 2, ViewportSize.Y - ViewportSize.Y) or From == "Bottom" and Vector2.new(ViewportSize.X / 2, ViewportSize.Y) or From == "Left" and Vector2.new(ViewportSize.X - ViewportSize.X, ViewportSize.Y / 2) or From == "Right" and Vector2.new(ViewportSize.X, ViewportSize.Y / 2);
+    Tracer.From = From == "Top" and Vector2new(ViewportSize.X / 2, ViewportSize.Y - ViewportSize.Y) or From == "Bottom" and Vector2new(ViewportSize.X / 2, ViewportSize.Y) or From == "Left" and Vector2new(ViewportSize.X - ViewportSize.X, ViewportSize.Y / 2) or From == "Right" and Vector2new(ViewportSize.X, ViewportSize.Y / 2);
 
     Text.Color = EspOptions.Color
     Text.OutlineColor = EspOptions.OutlineColor
@@ -358,10 +370,10 @@ local AddDrawing = function(Plr)
     Text.Visible = EspOptions.Enabled
     Drawings[Plr].Text = Text
 
-    Box.PointA = Vector2.new();
-    Box.PointB = Vector2.new();
-    Box.PointC = Vector2.new();
-    Box.PointD = Vector2.new();
+    Box.PointA = Vector2new();
+    Box.PointB = Vector2new();
+    Box.PointC = Vector2new();
+    Box.PointD = Vector2new();
     Box.Thickness = EspOptions.Thickness
     Box.Transparency = EspOptions.Transparency
     Box.Filled = false
@@ -387,18 +399,18 @@ Players.PlayerAdded:Connect(AddDrawing);
 
 if (AimbotOptions.Enabled) then
     Drawings["SilentAim"] = {}
-    local Circle = Drawing.new("Circle");
+    local Circle = Drawingnew("Circle");
     Circle.Color = AimbotOptions.FovColor
     Circle.Thickness = AimbotOptions.FovThickness
     Circle.Transparency = AimbotOptions.FovTransparency
     Circle.Filled = false
     Circle.Radius = AimbotOptions.FovSize or 150
-    Circle.Position = Vector2.new(Mouse.X, Mouse.Y + 36);
+    Circle.Position = Vector2new(Mouse.X, Mouse.Y + 36);
     Circle.Visible = AimbotOptions.ShowFov
     Drawings.SilentAim.Fov = Circle
 
-    local Snaplines = Drawing.new("Line");
-    Snaplines.From = Vector2.new(Mouse.X, Mouse.Y + 36);  
+    local Snaplines = Drawingnew("Line");
+    Snaplines.From = Vector2new(Mouse.X, Mouse.Y + 36);  
     Snaplines.Color = AimbotOptions.FovColor
     Snaplines.Thickness = .1
     Snaplines.Transparency = 1
@@ -408,7 +420,7 @@ end
 
 
 local Render = RunService.RenderStepped:Connect(function()
-    local MouseVector = Vector2.new(Mouse.X, Mouse.Y + 36);
+    local MouseVector = Vector2new(Mouse.X, Mouse.Y + 36);
 
     local SilentAim = Drawings["SilentAim"]
     local Circle, Snaplines = SilentAim.Fov, SilentAim.Snaplines
@@ -428,7 +440,14 @@ local Render = RunService.RenderStepped:Connect(function()
         if (not i) then
             Drawings[i] = nil
         end
-        if (i == LocalPlayer or not v.Tracer and not v.Box and not v.Text and not v.Skeleton) then
+        if (i == LocalPlayer or not v.Tracer and not v.Box and not v.Text) then
+            continue
+        end
+        local Char = GetCharacter(i);
+        if (not Char) then
+            v.Tracer.Visible = false
+            v.Text.Visible = false
+            v.Box.Visible = false
             continue
         end
 
@@ -450,9 +469,9 @@ local Render = RunService.RenderStepped:Connect(function()
         local TextTuple, TextVisible = GetVector2(i, "Head");
         if (TracerTuple and TracerVisible and TracerOptions.Enabled) then
             v.Tracer.Visible = true
-            v.Tracer.To = Vector2.new(TracerTuple.X, TracerTuple.Y);
+            v.Tracer.To = Vector2new(TracerTuple.X, TracerTuple.Y);
             if (EspOptions.TeamColors) then
-                v.Tracer.Color = BrickColor.new(tostring(i.TeamColor)).Color
+                v.Tracer.Color = BrickColornew(tostring(i.TeamColor)).Color
             end
         else
             v.Tracer.Visible = false            
@@ -460,10 +479,10 @@ local Render = RunService.RenderStepped:Connect(function()
         if (TextTuple and TextVisible) then
             v.Text.Visible = true
             local Magnitude, Humanoid = GetMagnitude(i), GetHumanoid(i) or {Health=0,MaxHealth=0}
-            v.Text.Position = Vector2.new(TextTuple.X, TextTuple.Y - 40);
+            v.Text.Position = Vector2new(TextTuple.X, TextTuple.Y - 40);
             v.Text.Text = ("%s\n%s %s"):format(EspOptions.Names and i.Name or "", EspOptions.Distance and ("[%s]"):format(math.floor(Magnitude or math.huge)) or "", EspOptions.Health and ("[%s/%s]"):format(math.floor(Humanoid.Health), math.floor(Humanoid.MaxHealth)) or "");
             if (EspOptions.TeamColors) then
-                local Color = BrickColor.new(tostring(i.TeamColor)).Color
+                local Color = BrickColornew(tostring(i.TeamColor)).Color
                 v.Text.Color = Color
                 v.Box.Color = Color
                 for i2, v2 in next, v.Skeleton do
@@ -471,11 +490,10 @@ local Render = RunService.RenderStepped:Connect(function()
                 end
             end
             local Parts = {}
-            local Char = GetCharacter(i)
             for i2, Part in next, Char:GetChildren() do
                 if (Part:IsA("BasePart")) then
                     local ViewportPos = Camera:WorldToViewportPoint(Part.Position);
-                    Parts[Part] = Vector2.new(ViewportPos.X, ViewportPos.Y);
+                    Parts[Part] = Vector2new(ViewportPos.X, ViewportPos.Y);
                 end
             end
 
@@ -484,7 +502,7 @@ local Render = RunService.RenderStepped:Connect(function()
                 local Distance = math.huge
                 local Closest = nil
                 for i2, Pos in next, Parts do
-                    local Mag = (Pos - Vector2.new(TextTuple.X, 0)).Magnitude;
+                    local Mag = (Pos - Vector2new(TextTuple.X, 0)).Magnitude;
                     if (Mag <= Distance) then
                         Closest = Pos
                         Distance = Mag
@@ -494,7 +512,7 @@ local Render = RunService.RenderStepped:Connect(function()
                 Closest = nil
                 Distance = math.huge
                 for i2, Pos in next, Parts do
-                    local Mag = (Pos - Vector2.new(TextTuple.X, Camera.ViewportSize.Y)).Magnitude;
+                    local Mag = (Pos - Vector2new(TextTuple.X, Camera.ViewportSize.Y)).Magnitude;
                     if (Mag <= Distance) then
                         Closest = Pos
                         Distance = Mag
@@ -504,7 +522,7 @@ local Render = RunService.RenderStepped:Connect(function()
                 Closest = nil
                 Distance = math.huge
                 for i2, Pos in next, Parts do
-                    local Mag = (Pos - Vector2.new(0, TextTuple.Y)).Magnitude;
+                    local Mag = (Pos - Vector2new(0, TextTuple.Y)).Magnitude;
                     if (Mag <= Distance) then
                         Closest = Pos
                         Distance = Mag
@@ -514,7 +532,7 @@ local Render = RunService.RenderStepped:Connect(function()
                 Closest = nil
                 Distance = math.huge
                 for i2, Pos in next, Parts do
-                    local Mag = (Pos - Vector2.new(Camera.ViewportSize.X, TextTuple.Y)).Magnitude;
+                    local Mag = (Pos - Vector2new(Camera.ViewportSize.X, TextTuple.Y)).Magnitude;
                     if (Mag <= Distance) then
                         Closest = Pos
                         Distance = Mag
@@ -524,10 +542,10 @@ local Render = RunService.RenderStepped:Connect(function()
                 Closest = nil
                 Distance = math.huge
     
-                v.Box.PointA = Vector2.new(Right.X, Top.Y);
-                v.Box.PointB = Vector2.new(Left.X, Top.Y);
-                v.Box.PointC = Vector2.new(Left.X, Bottom.Y);
-                v.Box.PointD = Vector2.new(Right.X, Bottom.Y);
+                v.Box.PointA = Vector2new(Right.X, Top.Y);
+                v.Box.PointB = Vector2new(Left.X, Top.Y);
+                v.Box.PointC = Vector2new(Left.X, Bottom.Y);
+                v.Box.PointD = Vector2new(Right.X, Bottom.Y);
                 v.Box.Visible = true
             end
 
@@ -550,11 +568,10 @@ local Render = RunService.RenderStepped:Connect(function()
             continue
         end
         
-        local Char = GetCharacter(i);
         local Part = GetPart(AimBone, Char);
         if (Char and Char:FindFirstChild("HumanoidRootPart") and Char:FindFirstChild(Part)) then
             local Tuple, Viewable = Camera:WorldToViewportPoint(Char[AimBone].Position);
-            local Vector2Magnitude = (MouseVector - Vector2.new(Tuple.X, Tuple.Y)).Magnitude
+            local Vector2Magnitude = (MouseVector - Vector2new(Tuple.X, Tuple.Y)).Magnitude
             local Vector3Magnitide = GetMagnitude(i);
             if (Viewable and Vector2Magnitude <= Vector2Distance and Vector2Magnitude <= AimbotOptions.FovSize) then
                 TargetCursor = i
@@ -565,7 +582,7 @@ local Render = RunService.RenderStepped:Connect(function()
                 
                 if (AimbotOptions.Snaplines and AimbotOptions.ShowFov) then
                     Snaplines.Visible = true
-                    Snaplines.To = Vector2.new(Tuple.X, Tuple.Y);
+                    Snaplines.To = Vector2new(Tuple.X, Tuple.Y);
                 else
                     Snaplines.Visible = false
                 end
@@ -584,7 +601,7 @@ local Render = RunService.RenderStepped:Connect(function()
         SilentAimingPlayer = AimbotOptions.ClosestCursor and TargetCursor or AimbotOptions.ClosestCharacter and TargetCharacter or TargetCursor
     end
     if (TargetViewable and AimbotOptions.FirstPerson and TargetAimbone) then
-        Camera.CoordinateFrame = CFrame.new(Camera.CoordinateFrame.p, TargetAimbone.Position);
+        Camera.CoordinateFrame = CFramenew(Camera.CoordinateFrame.p, TargetAimbone.Position);
     end
     if (TargetViewable and AimbotOptions.ThirdPerson and TargetTuple and mousemoveabs) then
         mousemoveabs(TargetTuple.X, TargetTuple.Y);
@@ -592,7 +609,7 @@ local Render = RunService.RenderStepped:Connect(function()
 end)
 
 local UILibrary = loadstring(game:HttpGet("https://raw.githubusercontent.com/fatesc/fates-esp/main/ui.lua"))(); --loadfile("uilib.txt")()
-local UI = UILibrary.new(Color3.fromRGB(255, 79, 87))
+local UI = UILibrary.new(Color3fromRGB(255, 79, 87))
 local Window = UI:LoadWindow('<font color="#ff4f57">fates</font> esp', UDim2.fromOffset(400, 279))
 local ESP = Window.NewPage("esp")
 local AIMBOT = Window.NewPage("aimbot")
@@ -613,13 +630,11 @@ TracersSection.Dropdown("From", {"Top", "Bottom", "Left", "Right"}, function(Cal
     TracerOptions.From = Callback
     for i, v in next, Drawings do
         if (v.Tracer) then
-            v.Tracer.From = Callback == "Top" and Vector2.new(ViewportSize.X / 2, ViewportSize.Y - ViewportSize.Y) or Callback == "Bottom" and Vector2.new(ViewportSize.X / 2, ViewportSize.Y) or Callback == "Left" and Vector2.new(ViewportSize.X - ViewportSize.X, ViewportSize.Y / 2) or Callback == "Right" and Vector2.new(ViewportSize.X, ViewportSize.Y / 2);
+            v.Tracer.From = Callback == "Top" and Vector2new(ViewportSize.X / 2, ViewportSize.Y - ViewportSize.Y) or Callback == "Bottom" and Vector2new(ViewportSize.X / 2, ViewportSize.Y) or Callback == "Left" and Vector2new(ViewportSize.X - ViewportSize.X, ViewportSize.Y / 2) or Callback == "Right" and Vector2new(ViewportSize.X, ViewportSize.Y / 2);
         end
     end
 end)
-TracersSection.Dropdown("Team", {"Allies", "Enemies", "All"}, function(Callback)
-    EspOptions.Team = Callback
-end)
+
 TracersSection.Slider("Tracer Transparency", {Min = 0, Max = 1, Default = TracerOptions.Transparency, Step = .1}, function(Callback)
     TracerOptions.Transparency = Callback
     for i, v in next, Drawings do
@@ -648,7 +663,7 @@ EspSection.Toggle("Team Colors", EspOptions.TeamColors, function(Callback)
         end
     end
 end)
-EspSection.ColorPicker("Esp Color", Color3.fromRGB(20, 226, 207), function(Callback)
+EspSection.ColorPicker("Esp Color", Color3fromRGB(20, 226, 207), function(Callback)
     EspOptions.TeamColors = false
     EspOptions.Color = Callback
     for i, v in next, Drawings do
@@ -667,6 +682,9 @@ EspSection.Toggle("Show Health", EspOptions.Health, function(Callback)
 end)
 EspSection.Toggle("Show Distance", EspOptions.Distance, function(Callback)
     EspOptions.Distance = Callback
+end)
+EspSection.Dropdown("Team", {"Allies", "Enemies", "All"}, function(Callback)
+    EspOptions.Team = Callback
 end)
 EspSection.Toggle("Box Esp", EspOptions.BoxEsp, function(Callback)
     EspOptions.BoxEsp = Callback
@@ -699,8 +717,8 @@ end)
 AimbotSection.Toggle("Wallbang", Wallbang, function(Callback)
     Wallbang = Callback
 end)
-TracersSection.Dropdown("Aimbone", {"Head","Torso","UpperTorso"}, function(Callback)
-	Aimbone = Callback
+AimbotSection.Dropdown("Aimbone", {"Head","Torso","UpperTorso"}, function(Callback)
+	AimBone = Callback
 end)
 AimbotSection.Slider("Hit Chance", {Min = 0, Max = 100, Default = SilentAimHitChance, Step = 1}, function(Callback)
     SilentAimHitChance = Callback
