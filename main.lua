@@ -2,6 +2,7 @@ local RunService = game:GetService("RunService");
 local Players = game:GetService("Players");
 local UserInputService = game:GetService("UserInputService");
 local Workspace = game:GetService("Workspace");
+local Teams = game:GetService("Teams");
 
 local Vector3new = Vector3.new
 local Vector2new = Vector2.new
@@ -52,7 +53,7 @@ getgc = getgc or function()
     return {}
 end
 
-local ISPF, Network, Client, GetBodyParts, GunTbl, Trajectory
+local ISPF, PF_Network, PF_Client, GetBodyParts, GunTbl, Trajectory
 if (game.PlaceId == 292439477) then
     if (not game:IsLoaded()) then
         game.Loaded:Wait();
@@ -61,7 +62,7 @@ if (game.PlaceId == 292439477) then
     for i, v in next, getgc(true) do
         if (type(v) == "table") then
             if (rawget(v, "send")) then
-                Network = v
+                PF_Network = v
             end
             if (rawget(v, "getbodyparts")) then
                 GetBodyParts = rawget(v, "getbodyparts");
@@ -70,7 +71,7 @@ if (game.PlaceId == 292439477) then
                 GunTbl = v
             end
             if (rawget(v, "setsway")) then
-                Client = v
+                PF_Client = v
             end
         elseif (type(v) == "function") then
             local funcinfo = debug.getinfo(v);
@@ -78,7 +79,7 @@ if (game.PlaceId == 292439477) then
                 Trajectory = v
             end
         end
-        if (GunTbl and GetBodyParts and Network and Trajectory and Client) then
+        if (GunTbl and GetBodyParts and PF_Network and Trajectory and PF_Client) then
             break
         end
     end
@@ -94,6 +95,50 @@ if (game.PlaceId == 292439477) then
         end
 		return Plr and Plr.Character or nil
     end
+end
+local ISBB, BB_Network, Projectiles
+if (game.PlaceId == 3233893879) then
+    ISBB = true
+    local Script = LocalPlayer.PlayerScripts.FriendlyNameScript
+    for i, v in next, getgc(true) do
+        if (type(v) == "table") then
+            local Projectiles_ = rawget(v, "Projectiles"); 
+            if (rawget(v, "Characters")) then
+                BB_Network = v
+            end
+            if (Projectiles_ and type(Projectiles_) == "table") then
+                Projectiles = v.Projectiles
+            end
+        end
+        if (BB_Network and Projectiles) then
+            break;
+        end
+    end
+    GetCharacter = function(Plr)
+        if (Plr == LocalPlayer or not Plr) then
+            return LocalPlayer.Character
+        end
+        local Char = BB_Network.Characters:GetCharacter(Plr);
+        if (Char and Char.Body) then
+            Plr.Character = Char.Body
+        end
+        return Plr and Plr.Character or nil
+    end
+    local function BB_GetTeamColor(rgb)
+        return Color3new(math.min(rgb.r * 1.3, 1), math.min(rgb.g * 1.3, 1), math.min(rgb.b * 1.3, 1));
+    end
+    local BB_Teams = BB_Network.Teams
+    for i, v in next, Players:GetPlayers() do
+        local Team = BB_Teams:GetPlayerTeam(v);
+        v.TeamColor = BrickColornew(BB_GetTeamColor(BB_Teams.Colors[Team]));
+    end
+    for i, v in next, Players:GetPlayers() do
+        local Team = BB_Teams:GetPlayerTeam(v);
+        v.TeamColor = BrickColornew(BB_GetTeamColor(BB_Teams.Colors[BB_Teams:GetPlayerTeam(v)]));
+    end
+    BB_Teams.TeamChanged:Connect(function(Plr, Team)
+        Plr.TeamColor = BrickColornew(BB_GetTeamColor(BB_Teams.Colors[Team]));
+    end)
 end
 
 local SilentAimingPlayer = nil
@@ -112,11 +157,16 @@ local __Index = OldMetaMethods.__index
 local __NewIndex = OldMetaMethods.__newindex
 
 mt.__namecall = newcclosure(function(self, ...)
-    if (checkcaller()) then
-        return __Namecall(self, ...);
-    end
     local Args = {...}
     local Method = getnamecallmethod():gsub("%z.*", "");
+
+
+    if (checkcaller()) then
+        if (Method == "FindFirstChild" and ISBB) then
+            return __Namecall(self, "Chest");
+        end
+        return __Namecall(self, ...);
+    end
 
     if (not ISPF and self == Workspace and Method == "FindPartOnRay" and SilentAimingPlayer) then
         local Char = GetCharacter(SilentAimingPlayer);
@@ -146,6 +196,10 @@ end)
 
 mt.__index = newcclosure(function(Instance_, Index)
     if (checkcaller()) then
+        if (Index == "HumanoidRootPart" and ISBB) then
+            return __Index(Instance_, "Chest")
+        end
+
         return __Index(Instance_, Index);
     end
 
@@ -204,9 +258,9 @@ OldFindPartOnRayWithIgnoreList = hookfunction(Workspace.FindPartOnRayWithIgnoreL
     end
     return OldFindPartOnRayWithIgnoreList(...);
 end))
-if (ISPF and Network and Network.send) then
-    local OldSend = Network.send
-    Network.send = function(...)
+if (ISPF and PF_Network and PF_Network.send) then
+    local OldSend = PF_Network.send
+    PF_Network.send = function(...)
         local Args = {...}
         local Type = Args[2]
         if (Type == "newbullets") then
@@ -218,7 +272,7 @@ if (ISPF and Network and Network.send) then
             local Viewable = not next(Camera.GetPartsObscuringTarget(Camera, {Camera.CFrame.Position, Char[AimBone].Position}, {LocalPlayer.Character, Char}));
             if (Char and Char[AimBone] and Chance and (Viewable or Wallbang)) then
                 local AimPos = Char[AimBone].Position + (Vector3new(math.random(1, 10), math.random(1, 10), math.random(1, 10)) / 10);
-                Args[3].bullets[1][1] = Trajectory(Client.basecframe * Vector3new(0, 0, 1), Vector3new(0, -Workspace.Gravity, 0), AimPos, GunTbl.currentgun.data.bulletspeed);
+                Args[3].bullets[1][1] = Trajectory(PF_Client.basecframe * Vector3new(0, 0, 1), Vector3new(0, -Workspace.Gravity, 0), AimPos, GunTbl.currentgun.data.bulletspeed);
       
                 OldSend(Args[1], "newbullets", Args[3], Args[4]);
                 OldSend(Args[1], "bullethit", SilentAimingPlayer, AimPos, GetCharacter(SilentAimingPlayer).Head, Args[3].bullets[1][2]);
@@ -226,6 +280,23 @@ if (ISPF and Network and Network.send) then
             end
         end
         return OldSend(...)
+    end
+end
+if (ISBB and Projectiles and Projectiles.InitProjectile) then
+    local OldInitProjectile = Projectiles.InitProjectile
+    Projectiles.InitProjectile = function(...)
+        local Args = {...}
+        local Char
+        if (SilentAimingPlayer) then
+            Char = GetCharacter(SilentAimingPlayer);
+            local Chance = math.random(1, 100) < SilentAimHitChance
+            local Viewable = not next(Camera.GetPartsObscuringTarget(Camera, {Camera.CFrame.Position, Char[AimBone].Position}, {LocalPlayer.Character, Char}));
+            if (Char and Char[AimBone] and Chance and (Viewable or Wallbang)) then
+                Args[3] = Char[AimBone].Position - Args[4]
+                return OldInitProjectile(unpack(Args));
+            end
+        end
+        return OldInitProjectile(...);
     end
 end
 
@@ -444,7 +515,7 @@ local Render = RunService.RenderStepped:Connect(function()
             continue
         end
         local Char = GetCharacter(i);
-        if (not Char) then
+        if (not Char and not Char:FindFirstChild("HumanoidRootPart")) then
             v.Tracer.Visible = false
             v.Text.Visible = false
             v.Box.Visible = false
