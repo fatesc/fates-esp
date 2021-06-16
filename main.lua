@@ -140,6 +140,7 @@ if (game.PlaceId == 3233893879) then
         Plr.TeamColor = BrickColornew(BB_GetTeamColor(BB_Teams.Colors[Team]));
     end)
 end
+local ISCB = game.PlaceId == 301549746
 
 local SilentAimingPlayer = nil
 local SilentAimHitChance = 100
@@ -186,7 +187,11 @@ mt.__namecall = newcclosure(function(self, ...)
         if (Char and Char[AimBone] and Chance) then
             local Viewable = not next(Camera.GetPartsObscuringTarget(Camera, {Camera.CFrame.Position, Char[AimBone].Position}, {LocalPlayer.Character, Char}));
             if (Viewable or Wallbang) then
-                return Char[AimBone], Char[AimBone].Position + (Vector3new(math.random(1, 10), math.random(1, 10), math.random(1, 10)) / 10), Vector3new(0, 1, 0), Char[AimBone].Material
+                if (not ISCB) then
+                    return Char[AimBone], Char[AimBone].Position + (Vector3new(math.random(1, 10), math.random(1, 10), math.random(1, 10)) / 10), Vector3new(0, 1, 0), Char[AimBone].Material
+                end
+                Args[1] = Ray.new(Args[1].Origin, (Char[AimBone].Position - Args[1].Origin));
+                return __Namecall(self, unpack(Args));
             end
         end
     end
@@ -247,12 +252,17 @@ end))
 local OldFindPartOnRayWithIgnoreList
 OldFindPartOnRayWithIgnoreList = hookfunction(Workspace.FindPartOnRayWithIgnoreList, newcclosure(function(...)
     if (not ISPF and SilentAimingPlayer and getcallingscript().Name ~= "CameraModule") then
+        local Args = {...}
         local Char = GetCharacter(SilentAimingPlayer);
         local Chance = math.random(1, 100) < SilentAimHitChance
         if (Char and Char[AimBone] and Chance) then
             local Viewable = not next(Camera.GetPartsObscuringTarget(Camera, {Camera.CFrame.Position, Char[AimBone].Position}, {LocalPlayer.Character, Char}));
             if (Viewable or Wallbang) then
-                return Char[AimBone], Char[AimBone].Position + (Vector3new(math.random(1, 10), math.random(1, 10), math.random(1, 10)) / 10), Vector3new(0, 1, 0), Char[AimBone].Material
+                if (not ISCB) then
+                    return Char[AimBone], Char[AimBone].Position + (Vector3new(math.random(1, 10), math.random(1, 10), math.random(1, 10)) / 10), Vector3new(0, 1, 0), Char[AimBone].Material
+                end
+                Args[1] = Ray.new(Args[1].Origin, (Char[AimBone].Position - Args[1].Origin));
+                return OldFindPartOnRayWithIgnoreList(unpack(Args));
             end
         end
     end
