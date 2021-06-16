@@ -515,7 +515,7 @@ local Render = RunService.RenderStepped:Connect(function()
             continue
         end
         local Char = GetCharacter(i);
-        if (not Char and not Char:FindFirstChild("HumanoidRootPart")) then
+        if (not Char) then
             v.Tracer.Visible = false
             v.Text.Visible = false
             v.Box.Visible = false
