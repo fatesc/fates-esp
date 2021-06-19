@@ -2,15 +2,18 @@ local RunService = game:GetService("RunService");
 local Players = game:GetService("Players");
 local UserInputService = game:GetService("UserInputService");
 local Workspace = game:GetService("Workspace");
-local Teams = game:GetService("Teams");
+local HttpService = game:GetService("HttpService");
 
 local Vector3new = Vector3.new
 local Vector2new = Vector2.new
+local UDim2new = UDim2.new
+local UDimnew = UDim.new
 local CFramenew = CFrame.new
 local BrickColornew = BrickColor.new
 local Drawingnew = Drawing.new
 local Color3new = Color3.new
 local Color3fromRGB = Color3.fromRGB
+local Color3fromHSV = Color3.fromHSV
 
 local Camera = Workspace.CurrentCamera
 
@@ -313,44 +316,97 @@ end
 local Drawing = Drawing or loadstring(game:HttpGet("https://raw.githubusercontent.com/fatesc/Roblox-Drawing-Lib/main/main.lua"))();
 
 local Drawings = {}
+local Window
 
-local TracerOptions = getgenv().TracerOptions or {
-    Enabled = true,
-    To = "Head",
-    From = "Bottom",
-    Thickness = 1.6,
-    Transparency = .7,
+local Load = function()
+    local Settings = HttpService:JSONDecode(readfile("fates-esp.json"));
+    local NewSettings = {}
+    for i, v in next, Settings do
+        NewSettings[i] = v
+        if (type(v) == "table") then
+            for i2, v2 in next, v do
+                if (type(v2) == "table") then
+                    if (#v2 == 3) --[[Color3]] then
+                        NewSettings[i][i2] = Color3fromHSV(v2[1], v2[2], v2[3]);
+                    elseif (#v2 == 4) --[[UDim2]] then
+                        NewSettings[i][i2] = UDim2new(UDimnew(v2[1], v2[2]), UDimnew(v2[3], v2[4]));
+                    end
+                else
+                    NewSettings[i][i2] = v2
+                end
+            end
+        end
+    end
+    return NewSettings
+end
+local Settings
+local Debounce = 0
+local Save = function()
+    if ((tick() - Debounce) >= 1.5) then
+        local NewSettings = {}
+        for i, v in next, Settings do
+            NewSettings[i] = v
+        end
+        for i, v in next, NewSettings do
+            for i2, v2 in next, v do
+                if (typeof(v2) == "Color3") then
+                    local H, S, V = v2:ToHSV();
+                    NewSettings[i][i2] = {H, S, V}
+                elseif (typeof(v2) == "UDim2") then
+                    local Pos = Window.GetPosition();
+                    NewSettings[i][i2] = {Pos.X.Scale, Pos.X.Offset, Pos.Y.Scale, Pos.Y.Offset}
+                end
+            end
+        end
+        writefile("fates-esp.json", HttpService:JSONEncode(NewSettings));
+        print("saved");
+        Debounce = tick();
+    end
+end
+
+Settings = isfile("fates-esp.json") and Load() or {
+    TracerOptions = {
+        Enabled = true,
+        To = "Head",
+        From = "Bottom",
+        Thickness = 1.6,
+        Transparency = .7,
+    };
+    EspOptions = {
+        Enabled = true,
+        TeamColors = true,
+        Names = true,
+        Health = true,
+        Distance = false,
+        Thickness = 1.5,
+        Transparency = .9,
+        Size = 16,
+        Color = Color3fromRGB(20, 226, 207),
+        OutlineColor = Color3new(),
+        Team = "All",
+        BoxEsp = true,
+        SkeletonEsp = true,
+    };
+    AimbotOptions = {
+        Enabled = true,
+        SilentAim = false,
+        ShowFov = false,
+        FovThickness = 1,
+        FovTransparency = 1,
+        FovSize = 150,
+        FovColor = Color3fromRGB(20, 226, 207),
+        Snaplines = false,
+        ThirdPerson = false,
+        FirstPerson = false,
+        ClosestCharacter = false,
+        ClosestCursor = true,
+        Team = "All",
+    };
+    UIOptions = {
+        Position = UDim2new(0.5, -200, 0.5, -139);
+    }
 }
-local EspOptions = getgenv().EspOptions or {
-    Enabled = true,
-    TeamColors = true,
-    Names = true,
-    Health = true,
-    Distance = false,
-    Thickness = 1.5,
-    Transparency = .9,
-    Size = 16,
-    Color = Color3fromRGB(20, 226, 207),
-    OutlineColor = Color3new(),
-    Team = "All",
-    BoxEsp = true,
-    SkeletonEsp = true,
-}
-local AimbotOptions = getgenv().AimbotOptions or {
-    Enabled = true,
-    SilentAim = false,
-    ShowFov = false,
-    FovThickness = 1,
-    FovTransparency = 1,
-    FovSize = 150,
-    FovColor = Color3fromRGB(20, 226, 207),
-    Snaplines = false,
-    ThirdPerson = false,
-    FirstPerson = false,
-    ClosestCharacter = false,
-    ClosestCursor = true,
-    Team = "All",
-}
+local TracerOptions, EspOptions, AimbotOptions, UIOptions = Settings.TracerOptions, Settings.EspOptions, Settings.AimbotOptions, Settings.UIOptions
 
 local GetPart = function(Part, Char)
     if (not Char) then
@@ -470,6 +526,19 @@ local AddDrawing = function(Plr)
     end
     Drawings[Plr].Skeleton = Skeleton
 end
+local RemoveDrawing = function(Plr)
+    local PlrDrawings = Drawings[Plr]
+    if (PlrDrawings) then
+        for i, PlrDrawings_ in next, PlrDrawings do
+            for _, Drawing_ in PlrDrawings do
+                if (Drawing_.Remove) then
+                    Drawing_:Remove();
+                end
+            end
+        end
+        Drawings[Plr] = nil
+    end
+end
 
 for i, v in next, Players:GetPlayers() do
     if (v ~= LocalPlayer) then
@@ -477,6 +546,7 @@ for i, v in next, Players:GetPlayers() do
     end
 end
 Players.PlayerAdded:Connect(AddDrawing);
+Players.PlayerRemoving:Connect(RemoveDrawing);
 
 if (AimbotOptions.Enabled) then
     Drawings["SilentAim"] = {}
@@ -519,7 +589,7 @@ local Render = RunService.RenderStepped:Connect(function()
     
     for i, v in next, Drawings do
         if (not i) then
-            Drawings[i] = nil
+            continue
         end
         if (i == LocalPlayer or not v.Tracer and not v.Box and not v.Text) then
             continue
@@ -636,9 +706,6 @@ local Render = RunService.RenderStepped:Connect(function()
         else
             v.Text.Visible = false
             v.Box.Visible = false
-            -- for i2, v2 in next, v.Skeleton do
-            --     v2.Visible = false
-            -- end
         end
 
         if (AimbotOptions.Team == "All") then
@@ -689,9 +756,9 @@ local Render = RunService.RenderStepped:Connect(function()
     end
 end)
 
-local UILibrary = loadstring(game:HttpGet("https://raw.githubusercontent.com/fatesc/fates-esp/main/ui.lua"))(); --loadfile("uilib.txt")()
+local UILibrary = loadfile("uilib.txt")();--loadstring(game:HttpGet("https://raw.githubusercontent.com/fatesc/fates-esp/main/ui.lua"))(); --loadfile("uilib.txt")()
 local UI = UILibrary.new(Color3fromRGB(255, 79, 87))
-local Window = UI:LoadWindow('<font color="#ff4f57">fates</font> esp', UDim2.fromOffset(400, 279))
+Window = UI:LoadWindow('<font color="#ff4f57">fates</font> esp', UDim2.fromOffset(400, 279));
 local ESP = Window.NewPage("esp")
 local AIMBOT = Window.NewPage("aimbot")
 local AimbotSection = AIMBOT.NewSection("Aimbot");
@@ -699,12 +766,15 @@ local ConfigSection = AIMBOT.NewSection("Config");
 local TracersSection = ESP.NewSection("Tracers")
 local EspSection = ESP.NewSection("Other")
 
+Window.SetPosition(UIOptions.Position);
 
 TracersSection.Toggle("Enable Tracers", TracerOptions.Enabled, function(Callback)
 	TracerOptions.Enabled = Callback
+    Save();
 end)
 TracersSection.Dropdown("To", {"Head","Torso","Left Arm","Right Arm","Left Leg","Right Leg"}, function(Callback)
 	TracerOptions.To = Callback
+    Save();
 end)
 TracersSection.Dropdown("From", {"Top", "Bottom", "Left", "Right"}, function(Callback)
     local ViewportSize = Camera.ViewportSize
@@ -714,6 +784,7 @@ TracersSection.Dropdown("From", {"Top", "Bottom", "Left", "Right"}, function(Cal
             v.Tracer.From = Callback == "Top" and Vector2new(ViewportSize.X / 2, ViewportSize.Y - ViewportSize.Y) or Callback == "Bottom" and Vector2new(ViewportSize.X / 2, ViewportSize.Y) or Callback == "Left" and Vector2new(ViewportSize.X - ViewportSize.X, ViewportSize.Y / 2) or Callback == "Right" and Vector2new(ViewportSize.X, ViewportSize.Y / 2);
         end
     end
+    Save();
 end)
 
 TracersSection.Slider("Tracer Transparency", {Min = 0, Max = 1, Default = TracerOptions.Transparency, Step = .1}, function(Callback)
@@ -723,6 +794,7 @@ TracersSection.Slider("Tracer Transparency", {Min = 0, Max = 1, Default = Tracer
             v.Tracer.Transparency = Callback
         end
     end
+    Save();
 end)
 TracersSection.Slider("Tracer Thickness", {Min = 0, Max = 5, Default = TracerOptions.Thickness, Step = .1}, function(Callback)
     TracerOptions.Thickness = Callback
@@ -731,6 +803,7 @@ TracersSection.Slider("Tracer Thickness", {Min = 0, Max = 5, Default = TracerOpt
             v.Tracer.Thickness = Callback
         end
     end
+    Save();
 end)
 
 EspSection.Toggle("Team Colors", EspOptions.TeamColors, function(Callback)
@@ -743,29 +816,35 @@ EspSection.Toggle("Team Colors", EspOptions.TeamColors, function(Callback)
             end
         end
     end
+    Save();
 end)
-EspSection.ColorPicker("Esp Color", Color3fromRGB(20, 226, 207), function(Callback)
+EspSection.ColorPicker("Esp Color", EspOptions.Color, function(Callback)
     EspOptions.TeamColors = false
     EspOptions.Color = Callback
     for i, v in next, Drawings do
-        if (v.Tracer and v.Text) then
+        if (v.Tracer and v.Text and v.Box) then
             v.Tracer.Color = Callback
             v.Text.Color = Callback
             v.Box.Color = Callback
         end
     end
+    Save();
 end)
 EspSection.Toggle("Show Names", EspOptions.Names, function(Callback)
     EspOptions.Names = Callback
+    Save();
 end)
 EspSection.Toggle("Show Health", EspOptions.Health, function(Callback)
     EspOptions.Health = Callback
+    Save();
 end)
 EspSection.Toggle("Show Distance", EspOptions.Distance, function(Callback)
     EspOptions.Distance = Callback
+    Save();
 end)
 EspSection.Dropdown("Team", {"Allies", "Enemies", "All"}, function(Callback)
     EspOptions.Team = Callback
+    Save();
 end)
 EspSection.Toggle("Box Esp", EspOptions.BoxEsp, function(Callback)
     EspOptions.BoxEsp = Callback
@@ -774,6 +853,7 @@ EspSection.Toggle("Box Esp", EspOptions.BoxEsp, function(Callback)
             v.Box.Visible = Callback
         end
     end
+    Save();
 end)
 EspSection.Slider("Box Thickness", {Min = 0, Max = 5, Default = EspOptions.Transparency, Step = .1}, function(Callback)
     EspOptions.Thickness = Callback
@@ -782,6 +862,7 @@ EspSection.Slider("Box Thickness", {Min = 0, Max = 5, Default = EspOptions.Trans
             v.Box.Thickness = Callback
         end
     end
+    Save();
 end)
 EspSection.Slider("Box Transparency", {Min = 0, Max = 1, Default = EspOptions.Transparency, Step = .1}, function(Callback)
     EspOptions.Transparency = Callback
@@ -790,10 +871,12 @@ EspSection.Slider("Box Transparency", {Min = 0, Max = 1, Default = EspOptions.Tr
             v.Box.Transparency = Callback
         end
     end
+    Save();
 end)
 
 AimbotSection.Toggle("Silent Aim", AimbotOptions.SilentAim, function(Callback)
     AimbotOptions.SilentAim = Callback
+    Save();
 end)
 AimbotSection.Toggle("Wallbang", Wallbang, function(Callback)
     Wallbang = Callback
@@ -806,12 +889,15 @@ AimbotSection.Slider("Hit Chance", {Min = 0, Max = 100, Default = SilentAimHitCh
 end)
 AimbotSection.Toggle("3rd P Aimlock", AimbotOptions.ThirdPerson, function(Callback)
     AimbotOptions.ThirdPerson = Callback
+    Save();
 end)
 AimbotSection.Toggle("1st P Aimlock", AimbotOptions.FirstPerson, function(Callback)
     AimbotOptions.FirstPerson = Callback
+    Save();
 end)
 AimbotSection.Dropdown("Team", {"Allies", "Enemies", "All"}, function(Callback)
     AimbotOptions.Team = Callback
+    Save();
 end)
 AimbotSection.Dropdown("Lock Type", {"Closest Cursor", "Closest Player"}, function(Callback)
     if (Callback == "Closest Cursor") then
@@ -821,20 +907,29 @@ AimbotSection.Dropdown("Lock Type", {"Closest Cursor", "Closest Player"}, functi
         AimbotOptions.ClosestCharacter = true
         AimbotOptions.ClosestCursor = false
     end
+    Save();
 end)
 
 ConfigSection.Toggle("Show Fov", AimbotOptions.ShowFov, function(Callback)
     AimbotOptions.ShowFov = Callback
     Drawings.SilentAim.Fov.Visible = Callback
+    Save();
 end)
 ConfigSection.ColorPicker("Fov Color", AimbotOptions.FovColor, function(Callback)
     Drawings.SilentAim.Fov.Color = Callback
     Drawings.SilentAim.Snaplines.Color = Callback
+    Save();
 end)
 ConfigSection.Slider("Fov Size", {Min = 70, Max = 500, Default = AimbotOptions.FovSize, Step = 10}, function(Callback)
     AimbotOptions.FovSize = Callback
     Drawings.SilentAim.Fov.Radius = Callback
+    Save();
 end)
 ConfigSection.Toggle("Enable Snaplines", AimbotOptions.Snaplines, function(Callback)
     AimbotOptions.Snaplines = Callback
+    Save();
 end)
+
+if (not isfile("fates-esp.json")) then
+    Save();
+end
