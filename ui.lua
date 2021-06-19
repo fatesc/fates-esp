@@ -295,25 +295,25 @@ function Utils.TweenTrans(Object, Transparency)
 		if (Instance:IsA("GuiObject")) then
 			for Class, Property in pairs(Properties) do
 				if (Instance:IsA(Class) and Instance[Property] ~= 1) then
-					Utils.Tween(Instance, "Quad", "Out", .25, {
+					Utils.Tween(Instance, "Quad", "Out", .5, {
 						[Property] = Transparency
 					})
 					break
 				end
 			end
 			if Instance.Name == "Overlay" and Transparency == 0 then -- check for overlay
-				Utils.Tween(Object, "Quad", "Out", .25, {
+				Utils.Tween(Object, "Quad", "Out", .5, {
 					BackgroundTransparency = .5
 				})
 			elseif (Instance.BackgroundTransparency ~= 1) then
-				Utils.Tween(Instance, "Quad", "Out", .25, {
+				Utils.Tween(Instance, "Quad", "Out", .5, {
 					BackgroundTransparency = Transparency
 				})
 			end
 		end
 	end
 
-	return Utils.Tween(Object, "Quad", "Out", .25, {
+	return Utils.Tween(Object, "Quad", "Out", .5, {
 		BackgroundTransparency = Transparency
 	})
 end
@@ -467,6 +467,12 @@ function UILibrary:LoadWindow(Title, Size)
 	local PageCount = 0
 	local SelectedPage
     
+	WindowLibrary.GetPosition = function()
+		return Window.Position
+	end
+	WindowLibrary.SetPosition = function(NewPos)
+		Window.Position = NewPos
+	end
 
 	function WindowLibrary.NewPage(Title)
 		local Page = GuiObjects.New.Page:Clone()
