@@ -1,3 +1,8 @@
+local game = game
+if (not game.IsLoaded(game)) then
+    game.Loaded.Wait(game.Loaded);
+end
+
 local GetService = game.GetService
 local RunService = GetService(game, "RunService");
 local Players = GetService(game, "Players");
