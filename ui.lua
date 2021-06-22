@@ -94,8 +94,6 @@ local function InitUI(UI)
 	elseif (get_hidden_gui or gethui) then
 		local HiddenUI = get_hidden_gui or gethui
 		UI.Parent = HiddenUI
-	elseif (CoreGui:FindFirstChild("RobloxGui")) then
-		UI.Parent = CoreGui.RobloxGui
 	else
 		UI.Parent = CoreGui
 	end

@@ -350,33 +350,8 @@ local Load = function()
     end
     return NewSettings
 end
-local Settings
-local Debounce = 0
-local Save = function()
-    if ((tick() - Debounce) >= 1.5) then
-        local NewSettings = {}
-        for i, v in next, Settings do
-            NewSettings[i] = v
-        end
-        for i, v in next, NewSettings do
-            for i2, v2 in next, v do
-                if (typeof(v2) == "Color3") then
-                    local H, S, V = ToHSV(v2);
-                    NewSettings[i][i2] = {H, S, V}
-                elseif (typeof(v2) == "UDim2") then
-                    local Pos = Window.GetPosition();
-                    NewSettings[i][i2] = {Pos.X.Scale, Pos.X.Offset, Pos.Y.Scale, Pos.Y.Offset}
-                end
-            end
-        end
-        writefile("fates-esp.json", JSONEncode(HttpService, NewSettings));
-        Settings = Load();
-        print("saved");
-        Debounce = tick();
-    end
-end
 
-Settings = isfile("fates-esp.json") and Load() or {
+local Settings = isfile("fates-esp.json") and Load() or {
     TracerOptions = {
         Enabled = true,
         To = "Head",
@@ -420,6 +395,33 @@ Settings = isfile("fates-esp.json") and Load() or {
     }
 }
 local TracerOptions, EspOptions, AimbotOptions, UIOptions = Settings.TracerOptions, Settings.EspOptions, Settings.AimbotOptions, Settings.UIOptions
+
+
+local Debounce = 0
+local Save = function()
+    if ((tick() - Debounce) >= 1.5) then
+        local NewSettings = {}
+        for i, v in next, Settings do
+            NewSettings[i] = v
+        end
+        for i, v in next, NewSettings do
+            for i2, v2 in next, v do
+                if (typeof(v2) == "Color3") then
+                    local H, S, V = ToHSV(v2);
+                    NewSettings[i][i2] = {H, S, V}
+                elseif (typeof(v2) == "UDim2") then
+                    local Pos = Window.GetPosition();
+                    NewSettings[i][i2] = {Pos.X.Scale, Pos.X.Offset, Pos.Y.Scale, Pos.Y.Offset}
+                end
+            end
+        end
+        writefile("fates-esp.json", JSONEncode(HttpService, NewSettings));
+        print("saved");
+        Settings = Load();
+        TracerOptions, EspOptions, AimbotOptions, UIOptions = Settings.TracerOptions, Settings.EspOptions, Settings.AimbotOptions, Settings.UIOptions
+        Debounce = tick();
+    end
+end
 
 local GetPart = function(Part, Char)
     if (not Char) then
