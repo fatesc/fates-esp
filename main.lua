@@ -180,11 +180,7 @@ mt.__namecall = newcclosure(function(self, ...)
     local Args = {...}
     local Method = gsub(getnamecallmethod(), "%z.*", "");
 
-
     if (checkcaller()) then
-        if (Method == "FindFirstChild" and ISBB) then
-            return __Namecall(self, "Chest");
-        end
         return __Namecall(self, ...);
     end
 
@@ -253,6 +249,18 @@ mt.__index = newcclosure(function(Instance_, Index)
 
     return __Index(Instance_, Index);
 end)
+
+local OldFindFirstChild
+OldFindFirstChild = hookfunction(FindFirstChild, newcclosure(function(...)
+    if (checkcaller()) then
+        local Args = {...}
+        if (Args[2] == "HumanoidRootPart" and ISBB) then
+            Args[2] = "Chest"
+            return OldFindFirstChild(unpack(Args));
+        end
+    end
+    return OldFindFirstChild(...)
+end))
 
 local OldFindPartOnRay
 OldFindPartOnRay = hookfunction(Workspace.FindPartOnRay, newcclosure(function(...)
@@ -470,11 +478,13 @@ end
 
 local GetMagnitude = function(Plr)
     local Char = GetCharacter(Plr);
-    local Part = FindFirstChild(Char, GetPart(AimBone, Char));
+    local Part = FindFirstChild(Char, "HumanoidRootPart") or FindFirstChild(Char, "Chest");
     if (Char and Part) then
         local LPChar = GetCharacter(LocalPlayer);
-        if (LPChar and FindFirstChild(LPChar, "HumanoidRootPart")) then
-            return (Part.Position - (GetCharacter(LocalPlayer) and GetCharacter(LocalPlayer).HumanoidRootPart.Position or Vector3new())).Magnitude
+        if (LPChar) then
+            if (FindFirstChild(LPChar, "HumanoidRootPart") or FindFirstChild(LPChar, "Chest")) then
+                return (Part.Position - (GetCharacter(LocalPlayer) and GetCharacter(LocalPlayer).HumanoidRootPart.Position or Vector3new())).Magnitude
+            end
         else
             return math.huge
         end
@@ -648,7 +658,7 @@ local Render = RunService.RenderStepped.Connect(RunService.RenderStepped, functi
         if (TextTuple and TextVisible) then
             v.Text.Visible = true
             local Magnitude, Humanoid = GetMagnitude(i), GetHumanoid(i) or {Health=0,MaxHealth=0}
-            if (Magnitude >= EspOptions.RenderDistance) then
+            if (Magnitude >= EspOptions.RenderDistance and not (ISBB or ISPF or ISCB)) then
                 v.Text.Visible = false
                 v.Box.Visible = false
                 v.Tracer.Visible = false
@@ -893,8 +903,12 @@ end)
 AimbotSection.Toggle("Wallbang", Wallbang, function(Callback)
     Wallbang = Callback
 end)
-AimbotSection.Dropdown("Aimbone", {"Head","Torso","UpperTorso"}, function(Callback)
-	AimBone = Callback
+AimbotSection.Dropdown("Aimbone", {"Head","Torso"}, function(Callback)
+	if (Callback == "Torso") then
+        AimBone = ISBB and "Chest" or "HumanoidRootPart"
+    else
+        AimBone = Callback
+    end
 end)
 AimbotSection.Slider("Hit Chance", {Min = 0, Max = 100, Default = SilentAimHitChance, Step = 1}, function(Callback)
     SilentAimHitChance = Callback
