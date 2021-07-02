@@ -46,7 +46,11 @@ local GetCharacter = GetCharacter or function(Plr)
     end
 end
 
-hookfunction = hookfunction or function(func, newfunc)
+local newcclosure = newcclosure or function(f)
+    return f
+end
+
+local hookfunction = hookfunction or function(func, newfunc)
     if (replaceclosure) then
         replaceclosure(func, newfunc);
         return newfunc
@@ -56,23 +60,23 @@ hookfunction = hookfunction or function(func, newfunc)
     return newfunc
 end
 
-getconnections = getconnections or function()
+local getconnections = getconnections or function()
     return {}
 end
 
-getrawmetatable = getrawmetatable or function()
+local getrawmetatable = getrawmetatable or function()
     return setmetatable({}, {});
 end
 
-getnamecallmethod = getnamecallmethod or function()
+local getnamecallmethod = getnamecallmethod or function()
     return ""
 end
 
-checkcaller = checkcaller or function()
+local checkcaller = checkcaller or function()
     return false
 end
 
-getgc = getgc or function()
+local getgc = getgc or function()
     return {}
 end
 
@@ -172,16 +176,14 @@ setreadonly(mt, false);
 for i, v in next, mt do
     OldMetaMethods[i] = v
 end
-local __Namecall = OldMetaMethods.__namecall
-local __Index = OldMetaMethods.__index
-local __NewIndex = OldMetaMethods.__newindex
 
-mt.__namecall = newcclosure(function(self, ...)
-    local Args = {...}
+local Namecall = function(...)
+    local __Namecall = OldMetaMethods.__namecall
     local Method = gsub(getnamecallmethod(), "%z.*", "");
-
+    local Args = {...}
+    local self = Args[1]
     if (checkcaller()) then
-        return __Namecall(self, ...);
+        return __Namecall(...);
     end
 
     if (not ISPF and self == Workspace and Method == "FindPartOnRay" and SilentAimingPlayer) then
@@ -205,16 +207,20 @@ mt.__namecall = newcclosure(function(self, ...)
                 if (not ISCB) then
                     return Char[AimBone], Char[AimBone].Position + (Vector3new(math.random(1, 10), math.random(1, 10), math.random(1, 10)) / 10), Vector3new(0, 1, 0), Char[AimBone].Material
                 end
-                Args[1] = Ray.new(Args[1].Origin, (Char[AimBone].Position - Args[1].Origin));
-                return __Namecall(self, unpack(Args));
+                Args[2] = Ray.new(Args[1].Origin, (Char[AimBone].Position - Args[2].Origin));
+                return __Namecall(unpack(Args));
             end
         end
     end
 
-    return __Namecall(self, unpack(Args));
-end)
+    return __Namecall(...);
+end
 
-mt.__index = newcclosure(function(Instance_, Index)
+local Index = function(...)
+    local __Index = OldMetaMethods.__index
+
+    local Instance_, Index = ...
+
     if (checkcaller()) then
         if (Index == "HumanoidRootPart" and ISBB) then
             return __Index(Instance_, "Chest")
@@ -247,8 +253,16 @@ mt.__index = newcclosure(function(Instance_, Index)
         end
     end
 
-    return __Index(Instance_, Index);
-end)
+    return __Index(...);
+end
+
+if (syn) then
+    OldMetaMethods.__namecall = hookmetamethod(game, "__namecall", Namecall);
+    OldMetaMethods.__index = hookmetamethod(game, "__index", Index);
+else
+    mt.__namecall = newcclosure(Namecall);
+    mt.__index = newcclosure(Index);
+end
 
 local OldFindFirstChild
 OldFindFirstChild = hookfunction(FindFirstChild, newcclosure(function(...)
