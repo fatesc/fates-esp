@@ -3,6 +3,8 @@ if (not game.IsLoaded(game)) then
     game.Loaded.Wait(game.Loaded);
 end
 
+local Drawing = Drawing or loadstring(game.HttpGet(game, "https://raw.githubusercontent.com/fatesc/Roblox-Drawing-Lib/main/main.lua"))();
+
 local GetService = game.GetService
 local RunService = GetService(game, "RunService");
 local Players = GetService(game, "Players");
@@ -351,8 +353,6 @@ if (ISBB and Projectiles and Projectiles.InitProjectile) then
     end
 end
 
-local Drawing = Drawing or loadstring(game.HttpGet(game, "https://raw.githubusercontent.com/fatesc/Roblox-Drawing-Lib/main/main.lua"))();
-
 local Drawings = {}
 local Window
 
@@ -499,10 +499,9 @@ local GetMagnitude = function(Plr)
             if (FindFirstChild(LPChar, "HumanoidRootPart") or FindFirstChild(LPChar, "Chest")) then
                 return (Part.Position - (GetCharacter(LocalPlayer) and GetCharacter(LocalPlayer).HumanoidRootPart.Position or Vector3new())).Magnitude
             end
-        else
-            return math.huge
         end
     end
+    return math.huge
 end
 
 local AddDrawing = function(Plr)
