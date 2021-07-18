@@ -420,19 +420,4 @@ Esp.new = function(Type, Options)
     return Added
 end
 
-
-Esp.new("Text", {
-    Target = game:GetService("Workspace").Map["funi easter eggs"].caig.dumb.Part,
-    Text = "ssssssssssssssssssssssssssssssssssss",
-    Part = true
-})
-for i, v in next, GetChildren(Workspace) do
-    if (FindFirstChildWhichIsA(v, "Humanoid")) then
-        Esp.new("Text", {
-            Target = v.Head,
-            OnRemoved = true,
-            Text = v.Name,
-            Part = true
-        })
-    end
-end
+return Esp
