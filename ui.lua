@@ -82,21 +82,26 @@ local function RandomString(Length)
 	return String
 end
 
+local ProtectInstance = loadstring(game.HttpGet(game, "https://raw.githubusercontent.com/fatesc/fates-esp/main/ProtectInstance.lua"))();
+
 local function InitUI(UI)
 	UI.DisplayOrder = 69420
 	UI.ResetOnSpawn = false
 	UI.Name = RandomString(10)
 	MainUI = UI
+	ProtectInstance(UI);
+	UI.Parent = CoreGui
+	
 
-	if ((not is_sirhurt_closure) and (syn and syn.protect_gui)) then
-		syn.protect_gui(UI)
-		UI.Parent = CoreGui
-	elseif (get_hidden_gui or gethui) then
-		local HiddenUI = get_hidden_gui or gethui
-		UI.Parent = HiddenUI
-	else
-		UI.Parent = CoreGui
-	end
+	-- if ((not is_sirhurt_closure) and (syn and syn.protect_gui)) then
+		-- syn.protect_gui(UI)
+		-- UI.Parent = CoreGui
+	-- elseif (get_hidden_gui or gethui) then
+		-- local HiddenUI = get_hidden_gui or gethui
+		-- UI.Parent = HiddenUI
+	-- else
+		-- UI.Parent = CoreGui
+	-- end
 
 	return UI
 end
