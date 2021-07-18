@@ -469,7 +469,7 @@ function UILibrary:LoadWindow(Title, Size)
 	local WindowLibrary = {}
 	local PageCount = 0
 	local SelectedPage
-    
+	
 	WindowLibrary.GetPosition = function()
 		return Window.Position
 	end
@@ -552,7 +552,7 @@ function UILibrary:LoadWindow(Title, Size)
 			local SectionOptions = Section.Options
 			local SectionUIListLayout = Section.Options.UIListLayout
 
-            -- Utils.SmoothScroll(Section.Options, .14)
+			-- Utils.SmoothScroll(Section.Options, .14)
 			Section.Title.Text = Title
 			Section.Parent = Page.Selection
 			
@@ -572,7 +572,7 @@ function UILibrary:LoadWindow(Title, Size)
 					Switch.Position = UDim2.fromOffset(2, 2)
 					Container.BackgroundColor3 = Colors.ElementBackground
 				end
-                
+				
 				Connect(Hitbox.MouseButton1Click, function()
 					Enabled = not Enabled
 					
@@ -587,12 +587,12 @@ function UILibrary:LoadWindow(Title, Size)
 				end)
 			end
 			
-            
+			
 			function ElementLibrary.Toggle(Title, Enabled, Callback)
 				local Toggle = GuiObjects.Elements.Toggle:Clone()
 				local Container = Toggle.Container
 				ToggleFunction(Container, Enabled, Callback)
-                
+				
 				Toggle.Title.Text = Title
 				Toggle.Parent = Section.Options
 			end
@@ -617,8 +617,8 @@ function UILibrary:LoadWindow(Title, Size)
 				Slider.Title.Text = Title
 								
 				local Moving = false
-                
-                local function Update()
+				
+				local function Update()
 					local RightBound = BarFrame.AbsoluteSize.X
 					local Position = math.clamp(Mouse.X - BarFrame.AbsolutePosition.X, 0, RightBound)
 					local Value = Args.Min + (Args.Max - Args.Min) * (Position / RightBound) -- get difference then add min value, lol lerp
@@ -634,7 +634,7 @@ function UILibrary:LoadWindow(Title, Size)
 					
 					Label.Text = Value
 					Tween.Completed:Wait()
-                end
+				end
 			
 				Connect(Hitbox.MouseButton1Down, function()
 					Moving = true
@@ -671,18 +671,18 @@ function UILibrary:LoadWindow(Title, Size)
 				local SelectColor = GuiObjects.Elements.SelectColor:Clone()
 				local CurrentColor = DefaultColor
 				local Button = SelectColor.Button
-                               
+							   
 				local H, S, V = DefaultColor:ToHSV()
 				local Opened = false
 				local Rainbow = false
-                
-                local function UpdateText()
+				
+				local function UpdateText()
 					RedTextBox.PlaceholderText = tostring(math.floor(CurrentColor.R * 255))
 					GreenTextBox.PlaceholderText = tostring(math.floor(CurrentColor.G * 255))
 					BlueTextBox.PlaceholderText = tostring(math.floor(CurrentColor.B * 255))
 				end
-                
-                local function UpdateColor()
+				
+				local function UpdateColor()
 					H, S, V = CurrentColor:ToHSV()
 					
 					SliderBar.Position = UDim2.new(0, 0, H, 2)
@@ -696,7 +696,7 @@ function UILibrary:LoadWindow(Title, Size)
 					UpdateText()
 				end
 
-                local function UpdateHue(Hue)
+				local function UpdateHue(Hue)
 					SliderBar.Position = UDim2.new(0, 0, Hue, 2)
 					ColorGradient.UIGradient.Color = Utils.MakeGradient({
 						[0] = Color3.new(1, 1, 1);
@@ -706,11 +706,11 @@ function UILibrary:LoadWindow(Title, Size)
 					ColorPreview.BackgroundColor3 = CurrentColor
 					UpdateText()
 				end
-                
-                local function ColorSliderInit()
+				
+				local function ColorSliderInit()
 					local Moving = false
-                    
-                    local function Update()
+					
+					local function Update()
 						if Opened and not Rainbow then
 							local LowerBound = SliderHitbox.AbsoluteSize.Y
 							local Position = math.clamp(Mouse.Y - SliderHitbox.AbsolutePosition.Y, 0, LowerBound)
@@ -734,7 +734,7 @@ function UILibrary:LoadWindow(Title, Size)
 							Callback(CurrentColor)
 							Tween.Completed:Wait()
 						end
-                    end
+					end
 				
 					Connect(SliderHitbox.MouseButton1Down, function()
 						Moving = true
@@ -755,8 +755,8 @@ function UILibrary:LoadWindow(Title, Size)
 				end
 				local function ColorCanvasInit()
 					local Moving = false
-                    
-                    local function Update()
+					
+					local function Update()
 						if Opened then
 							local LowerBound = CanvasHitbox.AbsoluteSize.Y
 							local YPosition = math.clamp(Mouse.Y - CanvasHitbox.AbsolutePosition.Y, 0, LowerBound)
@@ -779,7 +779,7 @@ function UILibrary:LoadWindow(Title, Size)
 							Callback(CurrentColor)
 							Tween.Completed:Wait()
 						end
-                    end
+					end
 				
 					Connect(CanvasHitbox.MouseButton1Down, function()
 						Moving = true
@@ -882,12 +882,12 @@ function UILibrary:LoadWindow(Title, Size)
 						Callback(CurrentColor)
 					end
 				end)
-                				
+								
 				Button.BackgroundColor3 = DefaultColor
 				SelectColor.Title.Text = Title
 				SelectColor.Parent = Section.Options
 			end
-            
+			
 			function ElementLibrary.Dropdown(Title, Options, Callback)
 				local DropdownElement = GuiObjects.Elements.Dropdown.DropdownElement:Clone()
 				local DropdownSelection = GuiObjects.Elements.Dropdown.DropdownSelection:Clone()
@@ -896,7 +896,7 @@ function UILibrary:LoadWindow(Title, Size)
 				local Opened = false
 				local Size = (TextButton.Size.Y.Offset + 5) * #Options
 				
-                local function ToggleDropdown()
+				local function ToggleDropdown()
 					Opened = not Opened
 					
 					if Opened then
@@ -928,8 +928,8 @@ function UILibrary:LoadWindow(Title, Size)
 					Connect(Clone.MouseButton1Click, function()
 						DropdownElement.Title.Text = Title .. ": " .. v
 						Callback(v)
-                        ToggleDropdown()
-                    end)
+						ToggleDropdown()
+					end)
 					
 					Utils.Click(Clone, "BackgroundColor3")
 					Clone.Text = v
@@ -947,12 +947,12 @@ function UILibrary:LoadWindow(Title, Size)
 			end
 			
 			return ElementLibrary
-            
+			
 		end
 		
 		return PageLibrary
 	end
-    	
+		
 	return WindowLibrary
 end
 
