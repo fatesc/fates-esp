@@ -288,14 +288,18 @@ local Render = RunService.RenderStepped.Connect(RunService.RenderStepped, functi
                 if (Box) then
                     Box.Visible = false
                 end
+                continue
             end
+            
 
             local TextTuple, TextVisible = GetVector2(Model, Options);
             if (Text and TextTuple and TextVisible) then
                 local Magnitude, Humanoid = GetTargetMagnitude(Model, Options), GetTargetHumanoid(Model) or {Health=0,MaxHealth=0}
 
-                if (Magnitude >= Options.RenderDistance or Magnitude >= math.huge) then
-                    Text.Visible = false
+                if (Magnitude) then
+                    if (Magnitude >= Options.RenderDistance or Magnitude >= math.huge) then
+                        Text.Visible = false
+                    end
                 end
 
                 Text.Visible = true
@@ -384,16 +388,14 @@ local Render = RunService.RenderStepped.Connect(RunService.RenderStepped, functi
     end
 end)
 
-CThread(function()
-    local Connection = CConnect(Workspace.DescendantRemoving, function(Removed)
-        for i, v in next, Drawings do
-            if (v.Options.OnRemoved) then
-                if (i == Removed) then
-                    RemoveDrawing(i);
-                end
+CConnect(Workspace.DescendantRemoving, function(Removed)
+    for i, v in next, Drawings do
+        if (v.Options.OnRemoved) then
+            if (i == Removed) then
+                RemoveDrawing(i);
             end
         end
-    end)
+    end
 end)
 
 local Esp = {}
@@ -422,8 +424,8 @@ end
 
 Esp.Remove = function(Target)
     for i, v in next, Drawings do
-        if (v.Options and v.Options.Target == Target or Target == 'All') then
-            RemoveDrawing(v.Options.Target);
+        if (v.Options and i == Target or Target == 'All') then
+            RemoveDrawing(i);
         end
     end
 end
