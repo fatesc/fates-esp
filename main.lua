@@ -62,10 +62,6 @@ local hookfunction = hookfunction or function(func, newfunc)
     return newfunc
 end
 
-local getconnections = getconnections or function()
-    return {}
-end
-
 local getrawmetatable = getrawmetatable or function()
     return setmetatable({}, {});
 end

@@ -4,11 +4,37 @@ local Tfind = table.find
 local string = string
 local gsub, sub = string.gsub, string.sub
 
+local filter = function(tbl, ret)
+    if (type(tbl) == 'table') then
+        local new = {}
+        for i, v in next, tbl do
+            if (ret(i, v)) then
+                new[#new + 1] = v
+            end
+        end
+        return new
+    end
+end
+
+local firsttime = false
+local brokeconnections = false
 local getconnections = function(...)
     if (not getconnections) then
         return {}
     end
-    return getconnections(...);
+    if (not firsttime) then
+        local Random = Instance.new("StringValue");
+        Random.Changed:Connect(function() end);
+        brokeconnections = getconnections(Random.Changed)[1].Func == nil
+    end
+    local Connections = getconnections(...);
+    if (brokeconnections) then
+        return Connections
+    end
+    local ActualConnections = filter(Connections, function(i, Connection)
+        return Connection.Func ~= nil
+    end);
+    return ActualConnections
 end
 
 local getrawmetatable = getrawmetatable or function()
@@ -27,6 +53,11 @@ local newcclosure = newcclosure or function(f)
     return f
 end
 
+local hookfunction = hookfunction or function(f, newf)
+    -- no way to make a hookfunction in lua
+    return f
+end
+
 local hookmetamethod = hookmetamethod or function(metatable, metamethod, func)
     setreadonly(metatable, false);
     local Old = metatable.metamethod
@@ -35,17 +66,6 @@ local hookmetamethod = hookmetamethod or function(metatable, metamethod, func)
     return Old
 end
 
-local filter = function(tbl, ret)
-    if (type(tbl) == 'table') then
-        local new = {}
-        for i, v in next, tbl do
-            if (ret(i, v)) then
-                new[#new + 1] = v
-            end
-        end
-        return new
-    end
-end
 
 local GetAllParents = function(Instance_)
     if (typeof(Instance_) == 'Instance') then
@@ -120,17 +140,9 @@ MetaMethodHooks.Index = function(...)
     if (typeof(Instance_) == 'Instance' and type(Index) == 'string') then
         SanitisedIndex = gsub(sub(Index, 0, 100), "%z.*", "");
     end
-    local ProtectedInstance = Tfind(ProtectedInstances, Instance_)
 
-    if (ProtectedInstance) then
-        if (Tfind(Methods, SanitisedIndex)) then
-            return newcclosure(function()
-                return SanitisedIndex == "IsA" and false or nil
-            end);
-        end
-        -- if (SanitisedIndex == "ClassName") then -- enable this if you want
-            -- return ""
-        -- end
+    if (Tfind(ProtectedInstances, __Index(...))) then
+        return nil
     end
 
     return __Index(...);
@@ -141,19 +153,21 @@ MetaMethodHooks.NewIndex = function(...)
     local Instance_, Index, Value = ...
     if (checkcaller()) then
         if (Index == "Parent") then
-            local ProtectedInstance = Tfind(ProtectedInstances, Instance_)
-            if (ProtectedInstance and typeof(Value) == 'Instance') then
+            local ProtectedInstance = Tfind(ProtectedInstances, Instance_);
+            if (ProtectedInstance) then
                 local Parents = GetAllParents(Value);
                 for i, v in next, getconnections(Parents[1].ChildAdded) do
                     v.Disable(v);
                 end
-                local Ret;
                 for i = 1, #Parents do
                     local Parent = Parents[i]
                     for i2, v in next, getconnections(Parent.DescendantAdded) do
                         v.Disable(v);
                     end
-                    Ret = __NewIndex(...);
+                end
+                local Ret = __NewIndex(...);
+                for i = 1, #Parents do
+                    local Parent = Parents[i]
                     for i2, v in next, getconnections(Parent.DescendantAdded) do
                         v.Enable(v);
                     end
@@ -178,5 +192,27 @@ local ProtectInstance = function(Instance_)
         ProtectedInstances[#ProtectedInstances + 1] = Instance_
     end
 end
+
+local OldGetChildren
+OldGetChildren = hookfunction(game.GetChildren, newcclosure(function(...)
+    if (not checkcaller()) then
+        local Children = OldGetChildren(...);
+        return filter(Children, function(i, v)
+            return not Tfind(ProtectedInstances, v);
+        end)
+    end
+    return OldGetChildren(...);
+end));
+
+local OldGetDescendants
+OldGetDescendants = hookfunction(game.GetDescendants, newcclosure(function(...)
+    if (not checkcaller()) then
+        local Descendants = OldGetDescendants(...);
+        return filter(Descendants, function(i, v)
+            return not Tfind(ProtectedInstances, v);
+        end)
+    end
+    return OldGetDescendants(...);
+end));
 
 return ProtectInstance
