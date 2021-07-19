@@ -16,23 +16,20 @@ local filter = function(tbl, ret)
     end
 end
 
-local firsttime = false
-local brokeconnections = false
 local getconnections = function(...)
     if (not getconnections) then
         return {}
     end
-    if (not firsttime) then
-        local Random = Instance.new("StringValue");
-        Random.Changed:Connect(function() end);
-        brokeconnections = getconnections(Random.Changed)[1].Func == nil
-    end
     local Connections = getconnections(...);
-    if (brokeconnections) then
-        return Connections
-    end
+    do return Connections end
     local ActualConnections = filter(Connections, function(i, Connection)
-        return Connection.Func ~= nil
+        if (Connection.Func) then
+            if (syn and not is_synapse_function(Connection.Func)) then
+                return true
+            end
+            return true
+        end
+        return false
     end);
     return ActualConnections
 end
@@ -152,7 +149,7 @@ MetaMethodHooks.NewIndex = function(...)
     local __NewIndex = OldMetaMethods.__newindex
     local Instance_, Index, Value = ...
     if (checkcaller()) then
-        if (Index == "Parent") then
+        if (Index == "Parent" and false) then -- disabled rn as of getconections broken
             local ProtectedInstance = Tfind(ProtectedInstances, Instance_);
             if (ProtectedInstance) then
                 local Parents = GetAllParents(Value);
