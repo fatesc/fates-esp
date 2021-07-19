@@ -420,4 +420,12 @@ Esp.new = function(Type, Options)
     return Added
 end
 
+Esp.Remove = function(Target)
+    for i, v in next, Drawings do
+        if (v.Options and v.Options.Target == Target or Target == 'All') then
+            RemoveDrawing(v.Options.Target);
+        end
+    end
+end
+
 return Esp
