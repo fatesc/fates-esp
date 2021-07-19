@@ -295,11 +295,8 @@ local Render = RunService.RenderStepped.Connect(RunService.RenderStepped, functi
             local TextTuple, TextVisible = GetVector2(Model, Options);
             if (Text and TextTuple and TextVisible) then
                 local Magnitude, Humanoid = GetTargetMagnitude(Model, Options), GetTargetHumanoid(Model) or {Health=0,MaxHealth=0}
-
-                if (Magnitude) then
-                    if (Magnitude >= Options.RenderDistance or Magnitude >= math.huge) then
-                        Text.Visible = false
-                    end
+                if (Magnitude and Options.RenderDistance and Magnitude >= Options.RenderDistance or Magnitude >= math.huge) then
+                    Text.Visible = false
                 end
 
                 Text.Visible = true
@@ -402,6 +399,10 @@ local Esp = {}
 
 Esp.new = function(Type, Options)
     local Target = Options.Target
+    local TargetType = typeof(Target);
+    assert(TargetType == 'Instance', format("Instance expected got %s", TargetType));    
+    assert(Type == "Tracer" or Type == "Text" or Type == "Box", "Invalid type");
+
     local IsPlayerCharacter = GetPlayerFromCharacter(Target) ~= nil
     local IsPlayer = IsA(Target, "Player");
     Options.IsPlayer = IsPlayer
