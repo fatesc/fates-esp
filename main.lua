@@ -595,7 +595,11 @@ end
 local Window
 
 local Load = function()
-    local Settings = JSONDecode(Services.HttpService, readfile("fates-esp.json"));
+    local Succ, Settings = pcall(JSONDecode, Services.HttpService, readfile("fates-esp.json"));
+    if (type(Settings) ~= 'table') then
+        delfile("fates-esp.json");
+        return nil
+    end
     local NewSettings = {}
     for i, v in next, Settings do
         NewSettings[i] = v
@@ -694,24 +698,24 @@ local GetPart = function(Part, Char)
         return Part
     end
     if (Part == "Torso") then
-        Part = "UpperTorso"
+        return "UpperTorso"
     elseif (Part == "Right Arm") then
-        Part = "RightUpperArm"
+        return "RightUpperArm"
     elseif (Part == "Left Arm") then
-        Part = "LeftUpperArm"
+        return "LeftUpperArm"
     elseif (Part == "Right Leg") then
         Part = "RightLowerLeg"
     elseif (Part == "Left Leg") then
-        Part = "LeftLowerLeg"
+        return "LeftLowerLeg"
     end
     return Part
 end
 
 local GetVector2 = function(Plr, To)
     local Char = GetCharacter(Plr);
-    To = GetPart(To, Char);
-    if (Plr and Char and FindFirstChild(Char, To)) then
-        return WorldToViewportPoint(Camera, FindFirstChild(Char, To or AimBone).Position);
+    To =  FindFirstChild(Char, GetPart(To, Char) or AimBone);
+    if (Plr and Char and To) then
+        return WorldToViewportPoint(Camera, To.Position);
     else
         return false
     end
@@ -719,8 +723,9 @@ end
 
 local GetHumanoid = function(Plr)
     local Char = GetCharacter(Plr);
-    if (Char and FindFirstChildWhichIsA(Char, "Humanoid")) then
-        return FindFirstChildWhichIsA(Char, "Humanoid");
+    local Humanoid = FindFirstChildWhichIsA(Char, "Humanoid")
+    if (Char and Humanoid) then
+        return Humanoid
     else
         return false
     end
@@ -732,8 +737,9 @@ local GetMagnitude = function(Plr)
     if (Char and Part) then
         local LPChar = GetCharacter(LocalPlayer);
         if (LPChar) then
-            if (FindFirstChild(LPChar, "HumanoidRootPart") or FindFirstChild(LPChar, "Chest")) then
-                return (Part.Position - (GetCharacter(LocalPlayer) and GetCharacter(LocalPlayer).HumanoidRootPart.Position or Vector3new())).Magnitude
+            local HumanoidRootPart = FindFirstChild(LPChar, "HumanoidRootPart") or FindFirstChild(LPChar, "Chest");
+            if (HumanoidRootPart) then
+                return (Part.Position - HumanoidRootPart.Position).Magnitude
             end
         end
     end
@@ -758,9 +764,6 @@ local KillScript = function()
     setreadonly(mt, false);
     mt = OldMetaMethods
     setreadonly(mt, true);
-    for i, v in next, getfenv() do
-        getfenv()[i] = nil
-    end
 	getgenv().Activated = nil
 end
 
@@ -849,13 +852,7 @@ end
 
 local SilentAim = Drawings["SilentAim"]
 
-local Render = AddConnection(CConnect(Services.RunService.RenderStepped, function()
-    local MouseVector = Vector2new(Mouse.X, Mouse.Y + 36);
-
     local Circle, Snaplines = SilentAim.Fov, SilentAim.Snaplines
-    Circle.Position = MouseVector
-    Snaplines.From = MouseVector
-    Snaplines.Visible = false
 
     local TargetCursor = nil
     local TargetCharacter = nil
@@ -864,6 +861,13 @@ local Render = AddConnection(CConnect(Services.RunService.RenderStepped, functio
     local TargetViewable = false
     local Vector2Distance = math.huge
     local Vector3Distance = math.huge
+
+local Render = AddConnection(CConnect(Services.RunService.RenderStepped, function()
+    local MouseVector = Vector2new(Mouse.X, Mouse.Y + 36);
+
+    Circle.Position = MouseVector
+    Snaplines.From = MouseVector
+    Snaplines.Visible = false
     
     for i, v in next, Drawings do
         if (not i) then
@@ -923,15 +927,16 @@ local Render = AddConnection(CConnect(Services.RunService.RenderStepped, functio
                 v.Text.Color = Color
                 v.Box.Color = Color
             end
-            local Parts = {}
-            for i2, Part in next, GetChildren(Char) do
-                if (IsA(Part, "BasePart")) then
-                    local ViewportPos = WorldToViewportPoint(Camera, Part.Position);
-                    Parts[Part] = Vector2new(ViewportPos.X, ViewportPos.Y);
-                end
-            end
 
             if (EspOptions.BoxEsp) then
+                local Parts = {}
+                for i2, Part in next, GetChildren(Char) do
+                    if (IsA(Part, "BasePart")) then
+                        local ViewportPos = WorldToViewportPoint(Camera, Part.Position);
+                        Parts[Part] = Vector2new(ViewportPos.X, ViewportPos.Y);
+                    end
+                end
+
                 local Top, Bottom, Left, Right
                 local Distance = math.huge
                 local Closest = nil
