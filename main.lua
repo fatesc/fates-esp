@@ -142,7 +142,7 @@ do
     end
 
     local CachedConnections = setmetatable({}, {
-        mode = "v"
+        __mode = "v"
     });
     getconnections = function(Connection, FromCache)
         local getconnections = GEnv.getconnections
@@ -222,6 +222,26 @@ local filter = function(tbl, ret)
             end
         end
         return new
+    end
+end
+
+local CThread;
+do
+    local wrap = coroutine.wrap
+    CThread = function(Func, ...)
+        if (type(Func) ~= 'function') then
+            return nil
+        end
+        local Varag = ...
+        return function()
+            local Success, Ret = pcall(wrap(Func, Varag));
+            if (Success) then
+                return Ret
+            end
+            if (Debug) then
+                warn("[FA Error]: " .. debug.traceback(Ret));
+            end
+        end
     end
 end
 
@@ -334,7 +354,12 @@ for i, v in next, mt do
 end
 local MetaMethodHooks = {}
 
-local CameraModule = FindFirstChild(LocalPlayer.PlayerScripts, "CameraModule", true)
+local ControlModule;
+CThread(function()
+    ypcall(function()
+        ControlModule = FindFirstChild(WaitForChild(WaitForChild(LocalPlayer, "PlayerScripts", 9e9), "PlayerModule", 9e9), "ControlModule")
+    end)
+end)()
 
 MetaMethodHooks.Namecall = function(...)
     local __Namecall = OldMetaMethods.__namecall
@@ -344,8 +369,9 @@ MetaMethodHooks.Namecall = function(...)
     if (checkcaller()) then
         return __Namecall(...);
     end
+    local CallingScript = getcallingscript and getcallingscript();
 
-    if (not ISPF and self == Services.Workspace and Method == "FindPartOnRay" and SilentAimingPlayer and getcallingscript() ~= CameraModule) then
+    if (not ISPF and self == Services.Workspace and Method == "FindPartOnRay" and SilentAimingPlayer and CallingScript ~= ControlModule) then
         local Char = GetCharacter(SilentAimingPlayer);
         local Chance = random(1, 100) < SilentAimHitChance
         if (Char and Char[AimBone] and Chance) then  
@@ -356,7 +382,7 @@ MetaMethodHooks.Namecall = function(...)
         end
     end
 
-    if (not ISPF and self == Services.Workspace and Method == "FindPartOnRayWithIgnoreList" and SilentAimingPlayer and getcallingscript() ~= CameraModule) then
+    if (not ISPF and self == Services.Workspace and Method == "FindPartOnRayWithIgnoreList" and SilentAimingPlayer and CallingScript ~= ControlModule) then
         local Char = GetCharacter(SilentAimingPlayer);
         local Chance = random(1, 100) < SilentAimHitChance
         
@@ -412,7 +438,9 @@ MetaMethodHooks.Index = function(...)
         SanitisedIndex = gsub(sub(Index, 0, 100), "%z.*", "");
     end
 
-    if (Instance_ == Mouse and SilentAimingPlayer and getcallingscript() ~= CameraModule) then
+    local CallingScript = getcallingscript and getcallingscript();
+
+    if (Instance_ == Mouse and SilentAimingPlayer and CallingScript ~= ControlModule) then
         local Char = GetCharacter(SilentAimingPlayer);
         local Chance = random(1, 100) < SilentAimHitChance
         if (Char and Char[AimBone] and Chance) then
@@ -711,32 +739,29 @@ local GetPart = function(Part, Char)
     return Part
 end
 
-local GetVector2 = function(Plr, To)
-    local Char = GetCharacter(Plr);
-    To =  FindFirstChild(Char, GetPart(To, Char) or AimBone);
-    if (Plr and Char and To) then
-        return WorldToViewportPoint(Camera, To.Position);
-    else
-        return false
+local GetVector2 = function(Char, To)
+    if (Char) then
+        To = FindFirstChild(Char, GetPart(To, Char) or AimBone);
+        if (To) then
+            return WorldToViewportPoint(Camera, To.Position);
+        end
     end
+    return false
 end
 
-local GetHumanoid = function(Plr)
-    local Char = GetCharacter(Plr);
-    local Humanoid = FindFirstChildWhichIsA(Char, "Humanoid")
-    if (Char and Humanoid) then
-        return Humanoid
-    else
-        return false
+local GetHumanoid = function(Char)
+    if (Char) then
+        local Humanoid = FindFirstChildWhichIsA(Char, "Humanoid");
+        return Humanoid or false
     end
+    return false
 end
 
-local GetMagnitude = function(Plr)
-    local Char = GetCharacter(Plr);
-    local Part = FindFirstChild(Char, "HumanoidRootPart") or FindFirstChild(Char, "Chest");
-    if (Char and Part) then
+local GetMagnitude = function(Char)
+    if (Char) then
+        local Part = FindFirstChild(Char, "HumanoidRootPart") or FindFirstChild(Char, "Chest");
         local LPChar = GetCharacter(LocalPlayer);
-        if (LPChar) then
+        if (LPChar and Part) then
             local HumanoidRootPart = FindFirstChild(LPChar, "HumanoidRootPart") or FindFirstChild(LPChar, "Chest");
             if (HumanoidRootPart) then
                 return (Part.Position - HumanoidRootPart.Position).Magnitude
@@ -768,10 +793,13 @@ local KillScript = function()
 end
 
 local AddDrawing = function(Plr)
+    if (not Plr.Character) then
+        CWait(Plr.CharacterAdded);
+    end
     local Tracer = Drawingnew("Line");
     local Text = Drawingnew("Text");
     local Box = Drawingnew("Quad");
-    local Tuple = GetVector2(Plr, TracerOptions.To);
+    local Tuple = GetVector2(Plr.Character, TracerOptions.To);
     Drawings[Plr] = {}
     if (Tuple) then
         Tracer.To = Vector2new(Tuple.X, Tuple.Y);
@@ -807,7 +835,6 @@ local AddDrawing = function(Plr)
     Box.Color = EspOptions.Color
     Box.Visible = EspOptions.Enabled    
     Drawings[Plr].Box = Box
-
 end
 local RemoveDrawing = function(Plr)
     local PlrDrawings = Drawings[Plr]
@@ -852,8 +879,10 @@ end
 
 local SilentAim = Drawings["SilentAim"]
 
-    local Circle, Snaplines = SilentAim.Fov, SilentAim.Snaplines
+local Circle, Snaplines = SilentAim.Fov, SilentAim.Snaplines
 
+
+local Render = AddConnection(CConnect(Services.RunService.RenderStepped, function()
     local TargetCursor = nil
     local TargetCharacter = nil
     local TargetAimbone = nil
@@ -861,8 +890,7 @@ local SilentAim = Drawings["SilentAim"]
     local TargetViewable = false
     local Vector2Distance = math.huge
     local Vector3Distance = math.huge
-
-local Render = AddConnection(CConnect(Services.RunService.RenderStepped, function()
+    
     local MouseVector = Vector2new(Mouse.X, Mouse.Y + 36);
 
     Circle.Position = MouseVector
@@ -900,8 +928,8 @@ local Render = AddConnection(CConnect(Services.RunService.RenderStepped, functio
             continue
         end
 
-        local TracerTuple, TracerVisible = GetVector2(i, TracerOptions.To);
-        local TextTuple, TextVisible = GetVector2(i, "Head");
+        local TracerTuple, TracerVisible = GetVector2(Char, TracerOptions.To);
+        local TextTuple, TextVisible = GetVector2(Char, "Head");
         if (TracerTuple and TracerVisible and TracerOptions.Enabled) then
             v.Tracer.Visible = true
             v.Tracer.To = Vector2new(TracerTuple.X, TracerTuple.Y);
@@ -913,7 +941,7 @@ local Render = AddConnection(CConnect(Services.RunService.RenderStepped, functio
         end
         if (TextTuple and TextVisible) then
             v.Text.Visible = true
-            local Magnitude, Humanoid = GetMagnitude(i), GetHumanoid(i) or {Health=0,MaxHealth=0}
+            local Magnitude, Humanoid = GetMagnitude(Char), GetHumanoid(Char) or {Health=0,MaxHealth=0}
             if (Magnitude >= EspOptions.RenderDistance and not (ISBB or ISPF or ISCB)) then
                 v.Text.Visible = false
                 v.Box.Visible = false
@@ -1004,7 +1032,8 @@ local Render = AddConnection(CConnect(Services.RunService.RenderStepped, functio
         if (Char and FindFirstChild(Char, "HumanoidRootPart") and FindFirstChild(Char, Part)) then
             local Tuple, Viewable = Camera.WorldToViewportPoint(Camera, Char[AimBone].Position);
             local Vector2Magnitude = (MouseVector - Vector2new(Tuple.X, Tuple.Y)).Magnitude
-            local Vector3Magnitide = GetMagnitude(i);
+            local Vector3Magnitide = GetMagnitude(Char);
+
             if (Viewable and Vector2Magnitude <= Vector2Distance and Vector2Magnitude <= AimbotOptions.FovSize) then
                 TargetCursor = i
                 TargetAimbone = AimbotOptions.ClosestCursor and Char[AimBone] or TargetAimbone
@@ -1058,26 +1087,6 @@ local Colors = {
 	ElementBackground = Color3fromRGB(25, 25, 25);
 }
 
-
-local CThread;
-do
-    local wrap = coroutine.wrap
-    CThread = function(Func, ...)
-        if (type(Func) ~= 'function') then
-            return nil
-        end
-        local Varag = ...
-        return function()
-            local Success, Ret = pcall(wrap(Func, Varag));
-            if (Success) then
-                return Ret
-            end
-            if (Debug) then
-                warn("[FA Error]: " .. debug.traceback(Ret));
-            end
-        end
-    end
-end
 
 local Debounce = function(Func)
 	local Debounce_ = false
