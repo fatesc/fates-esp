@@ -1491,7 +1491,7 @@ function UILibrary:LoadWindow(Title, Size)
 		return Window.Position
 	end
 	WindowLibrary.SetPosition = function(NewPos)
-		Window.Position = NewPos
+		Window.Position = UDim2.new(NewPos.X.Scale, math.clamp(NewPos.X.Offset, 0, (Camera.ViewportSize.X - Size.X.Offset)), NewPos.Y.Scale, math.clamp(NewPos.X.Offset, 0, (Camera.ViewportSize.Y - Size.Y.Offset)))
 	end
 
 	function WindowLibrary.NewPage(Title)
