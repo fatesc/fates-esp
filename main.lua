@@ -850,7 +850,7 @@ end
 
 for i, v in next, GetPlayers(Services.Players) do
     if (v ~= LocalPlayer) then
-        AddDrawing(v);
+        coroutine.wrap(AddDrawing)(v);
     end
 end
 AddConnection(CConnect(Services.Players.PlayerAdded, AddDrawing));
