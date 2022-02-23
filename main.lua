@@ -60,7 +60,7 @@ local DefaultSettings = {
         Transparency = .9,
         TracerTrancparency = .7,
         Size = 16,
-        RenderDistance = 7000,
+        RenderDistance = math.huge,
         Color = Color3.fromRGB(20, 226, 207),
         OutlineColor = Color3new(),
         TracerTo = "Head",
@@ -255,7 +255,9 @@ local HandlePlayer = function(Player)
         Characters[Player] = nil
     end);
 
-    local Text =  Drawing.new("Text");
+    if (Player == LocalPlayer) then return; end
+
+    local Text = Drawing.new("Text");
     Text.Color = EspSettings.Color
     Text.OutlineColor = EspSettings.OutlineColor
     Text.Size = EspSettings.Size
@@ -288,7 +290,7 @@ end);
 Players.PlayerRemoving:Connect(function(Player)
     Characters[Player] = nil
     local PlayerDrawings = Drawings[Player]
-    for Index, Drawing in pairs(PlayerDrawings) do
+    for Index, Drawing in pairs(PlayerDrawings or {}) do
         Drawing.Visible = false
     end
     Drawings[Player] = nil
@@ -493,9 +495,6 @@ end);
 local ClosestCharacter, Vector, Player, Aimlock;
 RunService.RenderStepped:Connect(function()
     ClosestCharacter, Vector, Player, Aimlock = GetClosestPlayerAndRender();
-
-    if (Locked and Settings.Aimbot) then
-    end
 end);
 
 local Hooks = {
@@ -520,6 +519,11 @@ MetaMethodHooks.Index = function(...)
     local __Index = OldMetaMethods.__index
 
     if (Player and Aimlock and ... == Mouse and not checkcaller()) then
+        local CallingScript = getfenv(2).script;
+        if (CallingScript.Name == "CallingScript") then
+            return __Index(...);
+        end
+
         local Mouse, Index = ...
         if (type(Index) == 'string') then
             Index = gsub(sub(Index, 0, 100), "%z.*", "");
@@ -644,7 +648,7 @@ EspSettingsUI.Toggle("Box Esp", EspSettings.BoxEsp, function(Callback)
     EspSettings.BoxEsp = Callback
     SetProperties({ Box = { Visible = Callback } });
 end);
-EspSettingsUI.Slider("Render Distance", { Min = 0, Max = 10000, Default = EspSettings.RenderDistance, Step = 10 }, function(Callback)
+EspSettingsUI.Slider("Render Distance", { Min = 0, Max = 50000, Default = math.clamp(EspSettings.RenderDistance, 0, 50000), Step = 10 }, function(Callback)
     EspSettings.RenderDistance = Callback
 end);
 EspSettingsUI.Slider("Esp Size", { Min = 0, Max = 30, Default = EspSettings.Size, Step = 1}, function(Callback)
