@@ -60,18 +60,18 @@ local DefaultSettings = {
         Transparency = .9,
         TracerTrancparency = .7,
         Size = 16,
-        RenderDistance = math.huge,
+        RenderDistance = 9e9,
         Color = Color3.fromRGB(20, 226, 207),
         OutlineColor = Color3new(),
         TracerTo = "Head",
         BlacklistedTeams = {}
     },
     Aimbot = {
-        Enabled = true,
-        SilentAim = true,
+        Enabled = false,
+        SilentAim = false,
         Wallbang = false,
-        ShowFov = true,
-        Snaplines = true,
+        ShowFov = false,
+        Snaplines = false,
         ThirdPerson = false,
         FirstPerson = false,
         ClosestCharacter = false,
@@ -86,6 +86,8 @@ local DefaultSettings = {
         BlacklistedTeams = {}
     },
     WindowPosition = UDim2.new(0.5, -200, 0.5, -139);
+
+    Version = 1.1
 }
 
 local EncodeConfig, DecodeConfig;
@@ -149,7 +151,11 @@ local GetConfig = function()
     local Good, Config = pcall(readfile, "fates-esp-v2.json");
     if (Good) then
         local Decoded = DecodeConfig(HttpService:JSONDecode(Config));
-        return Decoded
+        if (Decoded.Version ~= 1.1) then
+            local Encoded = HttpService:JSONEncode(EncodeConfig(DefaultSettings));
+            writefile("fates-esp-v2.json", Encoded);
+        end
+        return DefaultSettings
     else
         local Encoded = HttpService:JSONEncode(EncodeConfig(DefaultSettings));
         writefile("fates-esp-v2.json", Encoded);
@@ -253,6 +259,12 @@ local HandlePlayer = function(Player)
     end);
     CharacterRemoving(Player, function(Char)
         Characters[Player] = nil
+        local PlayerDrawings = Drawings[Player]
+        if (PlayerDrawings) then
+            PlayerDrawings.Text.Visible = false
+            PlayerDrawings.Box.Visible = false
+            PlayerDrawings.Tracer.Visible = false
+        end
     end);
 
     if (Player == LocalPlayer) then return; end
@@ -612,7 +624,7 @@ HookedFunctions.FindPartOnRayWithIgnoreList = {Workspace.FindPartOnRayWithIgnore
     if (self == Workspace and Player and Aimlock and not checkcaller()) then
         local CallingScript = getfenv(2).script;
         local PassedChance = random(1, 100) < AimbotSettings.SilentAimHitChance
-        if (CallingScript.Name ~= "ControlModule" and  ClosestCharacter and PassedChance) then
+        if (CallingScript.Name ~= "ControlModule" and ClosestCharacter and PassedChance) then
             local Viewable = not next(GetPartsObscuringTarget(CurrentCamera, {CurrentCamera.CFrame.Position, Aimlock}, {LocalPlayer.Character, ClosestCharacter}));
             if (Viewable or AimbotSettings.Wallbang) then
                 return Aimlock, Aimlock.Position + (Vector3new(random(1, 10), random(1, 10), random(1, 10)) / 10), Vector3new(0, 1, 0), Aimlock.Material
