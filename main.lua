@@ -17,7 +17,6 @@ local CurrentCamera = Workspace.CurrentCamera
 local WorldToViewportPoint = CurrentCamera.WorldToViewportPoint
 local GetPartsObscuringTarget = CurrentCamera.GetPartsObscuringTarget
 
-local FindFirstChild = game.FindFirstChild
 local IsA = game.IsA
 local Vector2new = Vector2.new
 local Vector3new = Vector3.new
@@ -27,21 +26,22 @@ local Color3new = Color3.new
 local Tfind = table.find
 local format = string.format
 local floor = math.floor
-local min = math.min
 local gsub = string.gsub
 local sub = string.sub
 local lower = string.lower
 local upper = string.upper
 local random = math.random
-local info = debug.info
-local getupvalues = debug.getupvalues
+
+-- I hate script ware lol
+local get_thread_identity = syn and syn.get_thread_identity or getthreadidentity
+local set_thread_identity = syn and syn.set_thread_identity or setidentity
 
 local CallF = function(Func, Identity, ...)
     if (Func and Identity) then
-        local CurrentIdentity = syn.get_thread_identity();
-        syn.set_thread_identity(Identity or CurrentIdentity);
+        local CurrentIdentity = get_thread_identity();
+        set_thread_identity(Identity or CurrentIdentity);
         local Ret = { Func(...); }
-        syn.set_thread_identity(CurrentIdentity);
+        set_thread_identity(CurrentIdentity);
         return unpack(Ret);
     end
 end
@@ -168,27 +168,6 @@ local Settings = GetConfig();
 local LocalPlayer = Players.LocalPlayer
 local Mouse = LocalPlayer:GetMouse();
 local MouseVector = Vector2new(Mouse.X, Mouse.Y);
-
-local filtergc = filtergc or function(Type, Args)
-    local Results = {}
-    for Index, Value in pairs(getgc(true)) do
-        if (type(Value) == Type) then
-            local Keys = Args.Keys
-            local Good = true
-            for Index2, Value2 in pairs(Keys) do
-                if (not rawget(Value, Value2)) then
-                    Good = false
-                    break
-                end
-            end
-            if (Good) then
-                table.insert(Results, Value);
-            end
-        end
-    end
-    return Results
-end
-
 local Characters = {}
 
 local CustomGet = {
