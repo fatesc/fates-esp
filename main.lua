@@ -465,7 +465,7 @@ end
 
 local Locked, SwitchedCamera = false, false
 UserInputService.InputBegan:Connect(function(Inp)
-    if (Inp.KeyCode == Enum.KeyCode.LeftControl) then
+    if (Inp.KeyCode == Enum.KeyCode.LeftAlt) then
         Locked = true
         if (AimbotSettings.FirstPerson and LocalPlayer.CameraMode ~= Enum.CameraMode.LockFirstPerson) then
             LocalPlayer.CameraMode = Enum.CameraMode.LockFirstPerson
@@ -474,7 +474,7 @@ UserInputService.InputBegan:Connect(function(Inp)
     end
 end);
 UserInputService.InputEnded:Connect(function(Inp)
-    if (Inp.KeyCode == Enum.KeyCode.LeftControl) then
+    if (Inp.KeyCode == Enum.KeyCode.LeftAlt) then
         Locked = false
         if (SwitchedCamera) then
             LocalPlayer.CameraMode = Enum.CameraMode.Classic
@@ -704,7 +704,7 @@ SilentAim.Dropdown("Lock Type", {"Closest Cursor", "Closest Player"}, function(C
     end
 end);
 
-Aimbot.Toggle("Aimbot (LCtrl)", AimbotSettings.Aimbot, function(Callback)
+Aimbot.Toggle("Aimbot (LAlt)", AimbotSettings.Aimbot, function(Callback)
     AimbotSettings.Aimbot = Callback
 end);
 Aimbot.Slider("Aimbot Smoothness", {Min = 1, Max = 10, Default = AimbotSettings.Smoothness, Step = .5}, function(Callback)
