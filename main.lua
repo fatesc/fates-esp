@@ -743,9 +743,9 @@ if (gethui) then
 else
     local protect_gui = (syn or getfenv()).protect_gui
     if (protect_gui) then
-        protect_gui(MainUI);
+        protect_gui(MainUI.UI);
     end
-    MainUI.UI.Parent = game.CoreGui
+    MainUI.UI.Parent = game:GetService("CoreGui");
 end
 
 while wait(5) do
