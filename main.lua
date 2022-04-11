@@ -17,7 +17,10 @@ local CurrentCamera = Workspace.CurrentCamera
 local WorldToViewportPoint = CurrentCamera.WorldToViewportPoint
 local GetPartsObscuringTarget = CurrentCamera.GetPartsObscuringTarget
 
+local Inset = game:GetService("GuiService"):GetGuiInset().Y
+
 local FindFirstChild = game.FindFirstChild
+local FindFirstChildWhichIsA = game.FindFirstChildWhichIsA
 local IsA = game.IsA
 local Vector2new = Vector2.new
 local Vector3new = Vector3.new
@@ -25,26 +28,14 @@ local CFramenew = CFrame.new
 local Color3new = Color3.new
 
 local Tfind = table.find
+local create = table.create
 local format = string.format
 local floor = math.floor
-local min = math.min
 local gsub = string.gsub
 local sub = string.sub
 local lower = string.lower
 local upper = string.upper
 local random = math.random
-local info = debug.info
-local getupvalues = debug.getupvalues
-
-local CallF = function(Func, Identity, ...)
-    if (Func and Identity) then
-        local CurrentIdentity = syn.get_thread_identity();
-        syn.set_thread_identity(Identity or CurrentIdentity);
-        local Ret = { Func(...); }
-        syn.set_thread_identity(CurrentIdentity);
-        return unpack(Ret);
-    end
-end
 
 local DefaultSettings = {
     Esp = {
@@ -71,7 +62,7 @@ local DefaultSettings = {
         SilentAim = false,
         Wallbang = false,
         ShowFov = false,
-        Snaplines = false,
+        Snaplines = true,
         ThirdPerson = false,
         FirstPerson = false,
         ClosestCharacter = false,
@@ -81,13 +72,14 @@ local DefaultSettings = {
         FovThickness = 1,
         FovTransparency = 1,
         FovSize = 150,
-        FovColor = Color3.fromRGB(20, 226, 207),
+        FovColor = Color3new(1, 1, 1),
         Aimlock = "Head",
+        SilentAimRedirect = "Head",
         BlacklistedTeams = {}
     },
     WindowPosition = UDim2.new(0.5, -200, 0.5, -139);
 
-    Version = 1.1
+    Version = 1.16
 }
 
 local EncodeConfig, DecodeConfig;
@@ -324,10 +316,10 @@ local SetProperties = function(Properties)
     end
 end
 
-local Closest = table.create(4);
-local GetClosestPlayerAndRender = function()
-    MouseVector = Vector2new(Mouse.X, Mouse.Y + 36);
 
+local GetClosestPlayerAndRender = function()
+    MouseVector = Vector2new(Mouse.X, Mouse.Y + Inset);
+    local Closest = create(4);
     local Vector2Distance = math.huge
     local Vector3DistanceOnScreen = math.huge
     local Vector3Distance = math.huge
@@ -340,14 +332,14 @@ local GetClosestPlayerAndRender = function()
         FOV.Visible = false
     end
 
-    local LocalRoot = Characters[LocalPlayer] and Characters[LocalPlayer]:FindFirstChild("HumanoidRootPart");
+    local LocalRoot = Characters[LocalPlayer] and FindFirstChild(Characters[LocalPlayer], "HumanoidRootPart");
     for Player, Character in pairs(Characters) do
         if (Player == LocalPlayer) then continue; end
         local PlayerDrawings = Drawings[Player]
-        local PlayerRoot = Character:FindFirstChild("HumanoidRootPart");
+        local PlayerRoot = FindFirstChild(Character, "HumanoidRootPart");
         local PlayerTeam = GetTeam(Player);
         if (PlayerRoot) then
-            local Redirect = Character:FindFirstChild(AimbotSettings.Aimlock);
+            local Redirect = FindFirstChild(Character, AimbotSettings.Aimlock);
             if (not Redirect) then
                 PlayerDrawings.Text.Visible = false
                 PlayerDrawings.Box.Visible = false
@@ -367,7 +359,7 @@ local GetClosestPlayerAndRender = function()
                     if (Visible and Vector2Magnitude <= Vector2Distance and AimbotSettings.ClosestCursor) then
                         Vector2Distance = Vector2Magnitude
                         Closest = {Character, CharacterVec2, Player, Redirect}
-                        if (AimbotSettings.Snaplines) then
+                        if (AimbotSettings.Snaplines and AimbotSettings.ShowFov) then
                             Snaplines.Visible = true
                             Snaplines.From = MouseVector
                             Snaplines.To = CharacterVec2
@@ -384,7 +376,7 @@ local GetClosestPlayerAndRender = function()
             end
 
             if (InRenderDistance and Visible and not Tfind(EspSettings.BlacklistedTeams, PlayerTeam)) then
-                local CharacterHumanoid = Character:FindFirstChildWhichIsA("Humanoid") or { Health = 0, MaxHealth = 0 };
+                local CharacterHumanoid = FindFirstChildWhichIsA(Character, "Humanoid") or { Health = 0, MaxHealth = 0 };
                 PlayerDrawings.Text.Text = format("%s\n%s%s",
                         EspSettings.NamesEnabled and Player.Name or "",
                         EspSettings.DistanceEnabled and format("[%s]",
@@ -492,21 +484,39 @@ local GetClosestPlayerAndRender = function()
     return unpack(Closest);
 end
 
-local Locked = false
+local Locked, SwitchedCamera = false, false
 UserInputService.InputBegan:Connect(function(Inp)
-    if (Inp.UserInputType == Enum.UserInputType.MouseButton2) then
+    if (Inp.KeyCode == Enum.KeyCode.LeftControl) then
         Locked = true
+        if (AimbotSettings.FirstPerson and LocalPlayer.CameraMode ~= Enum.CameraMode.LockFirstPerson) then
+            LocalPlayer.CameraMode = Enum.CameraMode.LockFirstPerson
+            SwitchedCamera = true
+        end
     end
 end);
 UserInputService.InputEnded:Connect(function(Inp)
-    if (Inp.UserInputType == Enum.UserInputType.MouseButton2) then
+    if (Inp.KeyCode == Enum.KeyCode.LeftControl) then
         Locked = false
+        if (SwitchedCamera) then
+            LocalPlayer.CameraMode = Enum.CameraMode.Classic
+        end
     end
 end);
 
 local ClosestCharacter, Vector, Player, Aimlock;
 RunService.RenderStepped:Connect(function()
     ClosestCharacter, Vector, Player, Aimlock = GetClosestPlayerAndRender();
+    if (Locked and AimbotSettings.Aimbot and ClosestCharacter) then
+        if (AimbotSettings.FirstPerson) then
+            if (syn) then
+                CurrentCamera.CoordinateFrame = CFramenew(CurrentCamera.CoordinateFrame.p, Aimlock.Position);
+            else
+                mousemoverel((Vector.X - MouseVector.X) / AimbotSettings.Smoothness, (Vector.Y - MouseVector.Y) / AimbotSettings.Smoothness);
+            end
+        elseif (AimbotSettings.ThirdPerson) then
+            mousemoveabs(Vector.X, Vector.Y);
+        end
+    end
 end);
 
 local Hooks = {
@@ -517,7 +527,7 @@ local Hooks = {
 }
 
 local OtherDeprecated = {
-    Children = "GetChildren"
+    children = "GetChildren"
 }
 
 local RealMethods = {}
@@ -541,21 +551,23 @@ MetaMethodHooks.Index = function(...)
             Index = gsub(sub(Index, 0, 100), "%z.*", "");
         end
         local PassedChance = random(1, 100) < AimbotSettings.SilentAimHitChance
-        if (PassedChance) then
-            local Viewable = not next(GetPartsObscuringTarget(CurrentCamera, {CurrentCamera.CFrame.Position, Aimlock.Position}, {LocalPlayer.Character, ClosestCharacter}));
+        if (PassedChance and AimbotSettings.SilentAim) then
+            local Parts = GetPartsObscuringTarget(CurrentCamera, {CurrentCamera.CFrame.Position, Aimlock.Position}, {LocalPlayer.Character, ClosestCharacter});
             local LowerIndex = lower(Index);
-            local Wallbang = AimbotSettings.Wallbang
-            local Hit = Viewable or Wallbang
-            if (LowerIndex == "target" and Hit) then
+            local Hit = #Parts == 0 or AimbotSettings.Wallbang
+            if (not Hit) then
+                return __Index(...);
+            end
+            if (LowerIndex == "target") then
                 return Aimlock
             end
-            if (LowerIndex == "hit" and Hit) then
+            if (LowerIndex == "hit") then
                 return Aimlock.CFramenew * CFramenew(random(1, 10) / 10, random(1, 10) / 10, random(1, 10) / 10);
             end
-            if (LowerIndex == "x" and Hit) then
+            if (LowerIndex == "x") then
                 return Vector.X + (random(1, 10) / 10);
             end
-            if (LowerIndex == "y" and Hit) then
+            if (LowerIndex == "y") then
                 return Vector.Y + (random(1, 10) / 10);
             end
         end
@@ -568,33 +580,9 @@ MetaMethodHooks.Namecall = function(...)
     local __Namecall = OldMetaMethods.__namecall
     local self = ...
     local Method = gsub(getnamecallmethod() or "", "^%l", upper);
-    local ClassName = CallF(Hooks.OldMetaMethods.__index, 3, self, "ClassName");
-    local RMethods = RealMethods[ClassName]
-    local FMethods = FakeMethods[ClassName]
-
-    if (not RMethods) then
-        RealMethods[ClassName] = {}
-        RMethods = RealMethods[ClassName]
-    end
-    if (not FMethods) then
-        FakeMethods[ClassName] = {}
-        FMethods = FakeMethods[ClassName]
-    end
-
-    if (RMethods[Method]) then
-        local Hooked = HookedFunctions[Method] or HookedFunctions[OtherDeprecated[Method]]
-        if (Hooked) then
-            return Hooked[1](...);
-        end
-    elseif (not FMethods[Method]) then
-        local IsMethod = pcall(function()
-            return self[Method]
-        end)
-        if (IsMethod) then
-            RMethods[Method] = true
-        else
-            FMethods[Method] = true
-        end
+    local Hooked = HookedFunctions[Method]
+    if (Hooked and self == Hooked[1]) then
+        return Hooked[3](...);
     end
 
     return __Namecall(...);
@@ -605,37 +593,38 @@ for MMName, MMFunc in pairs(MetaMethodHooks) do
     Hooks.OldMetaMethods[MetaMethod] = hookmetamethod(game, MetaMethod, MMFunc);
 end
 
-HookedFunctions.FindPartOnRay = {Workspace.FindPartOnRay, function(self, ...)
-    local OldFindPartOnRay = HookedFunctions.FindPartOnRay[3]
-    if (self == Workspace and Player and Aimlock and not checkcaller()) then
+HookedFunctions.FindPartOnRay = {Workspace, Workspace.FindPartOnRay, function(...)
+    local OldFindPartOnRay = HookedFunctions.FindPartOnRay[4]
+    if (AimbotSettings.SilentAim and Player and Aimlock and not checkcaller()) then
         local PassedChance = random(1, 100) < AimbotSettings.SilentAimHitChance
         if (ClosestCharacter and PassedChance) then
-            local Viewable = not next(GetPartsObscuringTarget(CurrentCamera, {CurrentCamera.CFrame.Position, Aimlock}, {LocalPlayer.Character, ClosestCharacter}));
-            if (Viewable or AimbotSettings.Wallbang) then
+            local Parts = GetPartsObscuringTarget(CurrentCamera, {CurrentCamera.CFrame.Position, Aimlock.Position}, {LocalPlayer.Character, ClosestCharacter});
+            print(#Parts);
+            if (#Parts == 0 or AimbotSettings.Wallbang) then
                 return Aimlock, Aimlock.Position + (Vector3new(random(1, 10), random(1, 10), random(1, 10)) / 10), Vector3new(0, 1, 0), Aimlock.Material
             end
         end
     end
-    return OldFindPartOnRay(self, ...);
+    return OldFindPartOnRay(...);
 end};
 
-HookedFunctions.FindPartOnRayWithIgnoreList = {Workspace.FindPartOnRayWithIgnoreList, function(self, ...)
-    local OldFindPartOnRayWithIgnoreList = HookedFunctions.FindPartOnRayWithIgnoreList[3]
-    if (self == Workspace and Player and Aimlock and not checkcaller()) then
-        local CallingScript = getfenv(2).script;
+HookedFunctions.FindPartOnRayWithIgnoreList = {Workspace, Workspace.FindPartOnRayWithIgnoreList, function(...)
+    local OldFindPartOnRayWithIgnoreList = HookedFunctions.FindPartOnRayWithIgnoreList[4]
+    if (Player and Aimlock and not checkcaller()) then
+        local CallingScript = getcallingscript();
         local PassedChance = random(1, 100) < AimbotSettings.SilentAimHitChance
         if (CallingScript.Name ~= "ControlModule" and ClosestCharacter and PassedChance) then
-            local Viewable = not next(GetPartsObscuringTarget(CurrentCamera, {CurrentCamera.CFrame.Position, Aimlock}, {LocalPlayer.Character, ClosestCharacter}));
-            if (Viewable or AimbotSettings.Wallbang) then
+            local Parts = GetPartsObscuringTarget(CurrentCamera, {CurrentCamera.CFrame.Position, Aimlock.Position}, {LocalPlayer.Character, ClosestCharacter});
+            if (#Parts == 0 or AimbotSettings.Wallbang) then
                 return Aimlock, Aimlock.Position + (Vector3new(random(1, 10), random(1, 10), random(1, 10)) / 10), Vector3new(0, 1, 0), Aimlock.Material
             end
         end
     end
-    return OldFindPartOnRayWithIgnoreList(self, ...);
+    return OldFindPartOnRayWithIgnoreList(...);
 end};
 
 for Index, Function in pairs(HookedFunctions) do
-    Function[3] = hookfunction(Function[1], Function[2]);
+    Function[4] = hookfunction(Function[2], Function[3]);
 end
 
 local MainUI = UILibrary.new(Color3.fromRGB(255, 79, 87));
@@ -644,8 +633,8 @@ local ESP = Window.NewPage("esp");
 local Aimbot = Window.NewPage("aimbot");
 local EspSettingsUI = ESP.NewSection("Esp");
 local TracerSettingsUI = ESP.NewSection("Tracers");
-local AimbotUI = Aimbot.NewSection("Aimbot");
-local AimbotConfigUI = Aimbot.NewSection("Config");
+local SilentAim = Aimbot.NewSection("Silent Aim");
+local Aimbot = Aimbot.NewSection("Aimbot");
 
 EspSettingsUI.Toggle("Show Names", EspSettings.NamesEnabled, function(Callback)
     EspSettings.NamesEnabled = Callback
@@ -711,28 +700,22 @@ TracerSettingsUI.Slider("Tracer Thickness", {Min = 0, Max = 5, Default = EspSett
     SetProperties({ Tracer = { Thickness = Callback } });
 end);
 
-AimbotUI.Toggle("Silent Aim", AimbotSettings.SilentAim, function(Callback)
+SilentAim.Toggle("Silent Aim", AimbotSettings.SilentAim, function(Callback)
     AimbotSettings.SilentAim = Callback
 end);
-AimbotUI.Toggle("Wallbang", AimbotSettings.Wallbang, function(Callback)
+SilentAim.Toggle("Wallbang", AimbotSettings.Wallbang, function(Callback)
     AimbotSettings.Wallbang = Callback
 end);
-AimbotUI.Dropdown("Aimbone", {"Head", "Torso"}, function(Callback)
-    AimbotSettings.Aimlock = Callback
+SilentAim.Dropdown("Redirect", {"Head", "Torso"}, function(Callback)
+    AimbotSettings.SilentAimRedirect = Callback
 end);
-AimbotUI.Slider("Hit Chance", {Min = 0, Max = 100, Default = AimbotSettings.SilentAimHitChance, Step = 1}, function(Callback)
+SilentAim.Slider("Hit Chance", {Min = 0, Max = 100, Default = AimbotSettings.SilentAimHitChance, Step = 1}, function(Callback)
     AimbotSettings.SilentAimHitChance = Callback
 end);
-AimbotUI.Toggle("Aimbot (Hold M2)", AimbotSettings.Aimbot, function(Callback)
-    AimbotSettings.Aimbot = Callback
-end);
-AimbotUI.Slider("Aimbot Smoothness", {Min = 1, Max = 10, Default = AimbotSettings.Smoothness, Step = .5}, function(Callback)
-    AimbotSettings.Smoothness = Callback
-end);
-AimbotUI.Dropdown("Team", {"Allies", "Enemies", "All"}, function(Callback)
+SilentAim.Dropdown("Team", {"Allies", "Enemies", "All"}, function(Callback)
     AimbotSettings.Team = Callback
 end);
-AimbotUI.Dropdown("Lock Type", {"Closest Cursor", "Closest Player"}, function(Callback)
+SilentAim.Dropdown("Lock Type", {"Closest Cursor", "Closest Player"}, function(Callback)
     if (Callback == "Closest Cursor") then
         AimbotSettings.ClosestCharacter = false
         AimbotSettings.ClosestCursor = true
@@ -742,25 +725,49 @@ AimbotUI.Dropdown("Lock Type", {"Closest Cursor", "Closest Player"}, function(Ca
     end
 end);
 
-AimbotConfigUI.Toggle("Show Fov", AimbotSettings.ShowFov, function(Callback)
+Aimbot.Toggle("Aimbot (LCtrl)", AimbotSettings.Aimbot, function(Callback)
+    AimbotSettings.Aimbot = Callback
+end);
+Aimbot.Slider("Aimbot Smoothness", {Min = 1, Max = 10, Default = AimbotSettings.Smoothness, Step = .5}, function(Callback)
+    AimbotSettings.Smoothness = Callback
+end);
+Aimbot.Dropdown("Aimlock Type", {"Third Person", "First Person"}, function(callback)
+    if (callback == "Third Person") then
+        AimbotSettings.ThirdPerson = true
+        AimbotSettings.FirstPerson = false
+    else
+        AimbotSettings.ThirdPerson = false
+        AimbotSettings.FirstPerson = true
+    end
+end);
+
+Aimbot.Toggle("Show Fov", AimbotSettings.ShowFov, function(Callback)
     AimbotSettings.ShowFov = Callback
     FOV.Visible = Callback
 end);
-AimbotConfigUI.ColorPicker("Fov Color", AimbotSettings.FovColor, function(Callback)
+Aimbot.ColorPicker("Fov Color", AimbotSettings.FovColor, function(Callback)
     AimbotSettings.FovColor = Callback
     FOV.Color = Callback
     Snaplines.Color = Callback
 end);
-AimbotConfigUI.Slider("Fov Size", {Min = 70, Max = 500, Default = AimbotSettings.FovSize, Step = 10}, function(Callback)
+Aimbot.Slider("Fov Size", {Min = 70, Max = 500, Default = AimbotSettings.FovSize, Step = 10}, function(Callback)
     AimbotSettings.FovSize = Callback
     FOV.Radius = Callback
 end);
-AimbotConfigUI.Toggle("Enable Snaplines", AimbotSettings.Snaplines, function(Callback)
+Aimbot.Toggle("Enable Snaplines", AimbotSettings.Snaplines, function(Callback)
     AimbotSettings.Snaplines = Callback
 end);
 Window.SetPosition(Settings.WindowPosition);
 
-MainUI.UI.Parent = game.CoreGui
+if (gethui) then
+    MainUI.UI.Parent = gethui();
+else
+    local protect_gui = (syn or getfenv()).protect_gui
+    if (protect_gui) then
+        protect_gui(MainUI);
+    end
+    MainUI.UI.Parent = game.CoreGui
+end
 
 while wait(5) do
     Settings.WindowPosition = Window.GetPosition();

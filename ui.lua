@@ -1,3 +1,6 @@
+local cloneref = cloneref or function(ref)
+	return ref;
+end
 local GetService = game.GetService
 local Services = setmetatable({}, {
     __index = function(self, Property)
