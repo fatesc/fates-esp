@@ -160,27 +160,6 @@ local Settings = GetConfig();
 local LocalPlayer = Players.LocalPlayer
 local Mouse = LocalPlayer:GetMouse();
 local MouseVector = Vector2new(Mouse.X, Mouse.Y);
-
-local filtergc = filtergc or function(Type, Args)
-    local Results = {}
-    for Index, Value in pairs(getgc(true)) do
-        if (type(Value) == Type) then
-            local Keys = Args.Keys
-            local Good = true
-            for Index2, Value2 in pairs(Keys) do
-                if (not rawget(Value, Value2)) then
-                    Good = false
-                    break
-                end
-            end
-            if (Good) then
-                table.insert(Results, Value);
-            end
-        end
-    end
-    return Results
-end
-
 local Characters = {}
 
 local CustomGet = {
