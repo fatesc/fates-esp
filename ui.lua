@@ -427,7 +427,7 @@ Utils.MakeGradient = function(ColorTable)
 	local Table = {}
     local ColorSequenceKeypointNew = ColorSequenceKeypoint.new
 	for Time, Color in next, ColorTable do
-		Table[#Table + 1] = ColorSequenceKeypointNew(Time, Color);
+		Table[#Table + 1] = ColorSequenceKeypointNew(Time - 1, Color);
 	end
 	return ColorSequence.new(Table)
 end
@@ -726,8 +726,8 @@ function UILibrary:LoadWindow(Title, Size)
 					SliderBar.Position = UDim2new(0, 0, H, 2);
 					CanvasBar.Position = UDim2new(S, 2, 1 - V, 2);
 					ColorGradient.UIGradient.Color = Utils.MakeGradient({
-						[0] = Color3new(1, 1, 1);
-						[1] = Color3fromHSV(H, 1, 1);
+						[1] = Color3new(1, 1, 1);
+						[2] = Color3fromHSV(H, 1, 1);
 					});
 
 					ColorPreview.BackgroundColor3 = CurrentColor
@@ -737,8 +737,8 @@ function UILibrary:LoadWindow(Title, Size)
 				local function UpdateHue(Hue)
 					SliderBar.Position = UDim2.new(0, 0, Hue, 2)
 					ColorGradient.UIGradient.Color = Utils.MakeGradient({
-						[0] = Color3.new(1, 1, 1);
-						[1] = Color3.fromHSV(Hue, 1, 1);
+						[1] = Color3.new(1, 1, 1);
+						[2] = Color3.fromHSV(Hue, 1, 1);
 					});
 
 					ColorPreview.BackgroundColor3 = CurrentColor
@@ -758,8 +758,8 @@ function UILibrary:LoadWindow(Title, Size)
 							CurrentColor = Color3.fromHSV(H, S, V);
 							ColorPreview.BackgroundColor3 = CurrentColor
 							ColorGradient.UIGradient.Color = Utils.MakeGradient({
-								[0] = Color3.new(1, 1, 1);
-								[1] = Color3.fromHSV(H, 1, 1);
+								[1] = Color3.new(1, 1, 1);
+								[2] = Color3.fromHSV(H, 1, 1);
 							});
 
 							UpdateText();

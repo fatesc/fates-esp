@@ -465,7 +465,7 @@ end
 
 local Locked, SwitchedCamera = false, false
 UserInputService.InputBegan:Connect(function(Inp)
-    if (Inp.KeyCode == Enum.KeyCode.LeftAlt) then
+    if (Inp.UserInputType == Enum.UserInputType.MouseButton2) then
         Locked = true
         if (AimbotSettings.FirstPerson and LocalPlayer.CameraMode ~= Enum.CameraMode.LockFirstPerson) then
             LocalPlayer.CameraMode = Enum.CameraMode.LockFirstPerson
@@ -474,7 +474,7 @@ UserInputService.InputBegan:Connect(function(Inp)
     end
 end);
 UserInputService.InputEnded:Connect(function(Inp)
-    if (Inp.KeyCode == Enum.KeyCode.LeftAlt) then
+    if (Inp.UserInputType == Enum.UserInputType.MouseButton2) then
         Locked = false
         if (SwitchedCamera) then
             LocalPlayer.CameraMode = Enum.CameraMode.Classic
@@ -691,9 +691,7 @@ end);
 SilentAim.Slider("Hit Chance", {Min = 0, Max = 100, Default = AimbotSettings.SilentAimHitChance, Step = 1}, function(Callback)
     AimbotSettings.SilentAimHitChance = Callback
 end);
-SilentAim.Dropdown("Team", {"Allies", "Enemies", "All"}, function(Callback)
-    AimbotSettings.Team = Callback
-end);
+
 SilentAim.Dropdown("Lock Type", {"Closest Cursor", "Closest Player"}, function(Callback)
     if (Callback == "Closest Cursor") then
         AimbotSettings.ClosestCharacter = false
@@ -704,12 +702,28 @@ SilentAim.Dropdown("Lock Type", {"Closest Cursor", "Closest Player"}, function(C
     end
 end);
 
-Aimbot.Toggle("Aimbot (LAlt)", AimbotSettings.Aimbot, function(Callback)
+Aimbot.Toggle("Aimbot (M2)", AimbotSettings.Aimbot, function(Callback)
     AimbotSettings.Aimbot = Callback
+    if (not AimbotSettings.FirstPerson and not AimbotSettings.ThirdPerson) then
+        AimbotSettings.FirstPerson = true
+    end
 end);
 Aimbot.Slider("Aimbot Smoothness", {Min = 1, Max = 10, Default = AimbotSettings.Smoothness, Step = .5}, function(Callback)
     AimbotSettings.Smoothness = Callback
 end);
+local sortTeams = function(Callback)
+    table.clear(AimbotSettings.BlacklistedTeams);
+    if (Callback == "Enemies") then
+        table.insert(AimbotSettings.BlacklistedTeams, LocalPlayer.Team);
+    end
+    if (Callback == "Allies") then
+        local AllTeams = Teams:GetTeams();
+        table.remove(AllTeams, table.find(AllTeams, LocalPlayer.Team));
+        AimbotSettings.BlacklistedTeams = AllTeams
+    end
+end
+Aimbot.Dropdown("Team Target", {"Allies", "Enemies", "All"}, sortTeams);
+sortTeams("Enemies");
 Aimbot.Dropdown("Aimlock Type", {"Third Person", "First Person"}, function(callback)
     if (callback == "Third Person") then
         AimbotSettings.ThirdPerson = true
