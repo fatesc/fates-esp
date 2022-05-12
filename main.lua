@@ -52,7 +52,7 @@ local DefaultSettings = {
         TracerTrancparency = .7,
         Size = 16,
         RenderDistance = 9e9,
-        Color = Color3.fromRGB(20, 226, 207),
+        Color = Color3.fromRGB(19, 130, 226),
         OutlineColor = Color3new(),
         TracerTo = "Head",
         BlacklistedTeams = {}
@@ -79,7 +79,7 @@ local DefaultSettings = {
     },
     WindowPosition = UDim2.new(0.5, -200, 0.5, -139);
 
-    Version = 1.16
+    Version = 1.2
 }
 
 local EncodeConfig, DecodeConfig;
@@ -140,17 +140,18 @@ do
 end
 
 local GetConfig = function()
-    local Good, Config = pcall(readfile, "fates-esp-v2.json");
+    local Good, Config = pcall(readfile, "fates-esp.json");
     if (Good) then
         local Decoded = DecodeConfig(HttpService:JSONDecode(Config));
-        if (Decoded.Version ~= 1.1) then
+        if (Decoded.Version ~= DefaultSettings.Version) then
             local Encoded = HttpService:JSONEncode(EncodeConfig(DefaultSettings));
-            writefile("fates-esp-v2.json", Encoded);
+            writefile("fates-esp.json", Encoded);
+            return DefaultSettings;
         end
-        return DefaultSettings
+        return Decoded;
     else
         local Encoded = HttpService:JSONEncode(EncodeConfig(DefaultSettings));
-        writefile("fates-esp-v2.json", Encoded);
+        writefile("fates-esp.json", Encoded);
         return DefaultSettings
     end
 end
@@ -465,7 +466,7 @@ end
 
 local Locked, SwitchedCamera = false, false
 UserInputService.InputBegan:Connect(function(Inp)
-    if (Inp.UserInputType == Enum.UserInputType.MouseButton2) then
+    if (AimbotSettings.Enabled and Inp.UserInputType == Enum.UserInputType.MouseButton2) then
         Locked = true
         if (AimbotSettings.FirstPerson and LocalPlayer.CameraMode ~= Enum.CameraMode.LockFirstPerson) then
             LocalPlayer.CameraMode = Enum.CameraMode.LockFirstPerson
@@ -474,7 +475,7 @@ UserInputService.InputBegan:Connect(function(Inp)
     end
 end);
 UserInputService.InputEnded:Connect(function(Inp)
-    if (Inp.UserInputType == Enum.UserInputType.MouseButton2) then
+    if (AimbotSettings.Enabled and Inp.UserInputType == Enum.UserInputType.MouseButton2) then
         Locked = false
         if (SwitchedCamera) then
             LocalPlayer.CameraMode = Enum.CameraMode.Classic
@@ -485,7 +486,7 @@ end);
 local ClosestCharacter, Vector, Player, Aimlock;
 RunService.RenderStepped:Connect(function()
     ClosestCharacter, Vector, Player, Aimlock = GetClosestPlayerAndRender();
-    if (Locked and AimbotSettings.Aimbot and ClosestCharacter) then
+    if (Locked and AimbotSettings.Enabled and ClosestCharacter) then
         if (AimbotSettings.FirstPerson) then
             if (syn) then
                 CurrentCamera.CoordinateFrame = CFramenew(CurrentCamera.CoordinateFrame.p, Aimlock.Position);
@@ -541,7 +542,7 @@ MetaMethodHooks.Index = function(...)
                 return Aimlock
             end
             if (LowerIndex == "hit") then
-                return Aimlock.CFramenew * CFramenew(random(1, 10) / 10, random(1, 10) / 10, random(1, 10) / 10);
+                return Aimlock.CFrame * CFramenew(random(1, 10) / 10, random(1, 10) / 10, random(1, 10) / 10);
             end
             if (LowerIndex == "x") then
                 return Vector.X + (random(1, 10) / 10);
@@ -702,8 +703,8 @@ SilentAim.Dropdown("Lock Type", {"Closest Cursor", "Closest Player"}, function(C
     end
 end);
 
-Aimbot.Toggle("Aimbot (M2)", AimbotSettings.Aimbot, function(Callback)
-    AimbotSettings.Aimbot = Callback
+Aimbot.Toggle("Aimbot (M2)", AimbotSettings.Enabled, function(Callback)
+    AimbotSettings.Enabled = Callback
     if (not AimbotSettings.FirstPerson and not AimbotSettings.ThirdPerson) then
         AimbotSettings.FirstPerson = true
     end
@@ -755,7 +756,7 @@ Window.SetPosition(Settings.WindowPosition);
 if (gethui) then
     MainUI.UI.Parent = gethui();
 else
-    local protect_gui = (syn or getfenv()).protect_gui
+    local protect_gui = (syn or getgenv()).protect_gui
     if (protect_gui) then
         protect_gui(MainUI.UI);
     end
@@ -765,5 +766,5 @@ end
 while wait(5) do
     Settings.WindowPosition = Window.GetPosition();
     local Encoded = HttpService:JSONEncode(EncodeConfig(Settings));
-    writefile("fates-esp-v2.json", Encoded);
+    writefile("fates-esp.json", Encoded);
 end
