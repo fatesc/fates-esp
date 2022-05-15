@@ -141,7 +141,7 @@ end
 
 local GetConfig = function()
     local read, data = pcall(readfile, "fates-esp.json");
-    local canDecode, config = read and pcall(HttpService.JSONDecode, HttpService, data);
+    local canDecode, config = pcall(HttpService.JSONDecode, HttpService, data);
     if (read and canDecode) then
         local Decoded = DecodeConfig(config);
         if (Decoded.Version ~= DefaultSettings.Version) then
