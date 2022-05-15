@@ -140,9 +140,10 @@ do
 end
 
 local GetConfig = function()
-    local Good, Config = pcall(readfile, "fates-esp.json");
-    if (Good) then
-        local Decoded = DecodeConfig(HttpService:JSONDecode(Config));
+    local read, data = pcall(readfile, "fates-esp.json");
+    local canDecode, config = read and pcall(HttpService.JSONDecode, HttpService, data);
+    if (read and canDecode) then
+        local Decoded = DecodeConfig(config);
         if (Decoded.Version ~= DefaultSettings.Version) then
             local Encoded = HttpService:JSONEncode(EncodeConfig(DefaultSettings));
             writefile("fates-esp.json", Encoded);
