@@ -110,8 +110,10 @@ do
             if (Color) then
                 return Color3.fromHSV(Color.H, Color.S, Color.V);
             end
-            if (Position) then
+            if (Position and Position.Y and Position.X) then
                 return UDim2.new(UDim.new(Position.X.Scale, Position.X.Offset), UDim.new(Position.Y.Scale, Position.Y.Offset));
+            else
+                return DefaultSettings.WindowPosition;
             end
         end);
         return DecodedConfig
